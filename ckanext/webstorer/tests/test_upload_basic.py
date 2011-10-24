@@ -58,7 +58,7 @@ class TestUploadBasic(object):
                    'ckan_url': 'http://0.0.0.0:50001',
                    'apikey': 'test',
                    'username': 'test'}
-        tasks.webstore_upload(json.dumps(context), json.dumps(data))
+        tasks.webstorer_upload(json.dumps(context), json.dumps(data))
 
         response = requests.get('http://0.0.0.0:50002/test/uuid1/data.json')
 
@@ -70,14 +70,50 @@ class TestUploadBasic(object):
                                                 {u'date': u'2011-01-02', u'place': u'Berkeley', u'__id__': 5, u'temperature': u'8'},
                                                 {u'date': u'2011-01-03', u'place': u'Berkeley', u'__id__': 6, u'temperature': u'5'}], json.loads(response.content)
 
+        response = requests.get('http://0.0.0.0:50001/last_request')
         
-
-
-
-
-
-      
+        assert json.loads(response.content)['headers'] == {u'Content-Length': u'126',
+                                                          u'Accept-Encoding': u'gzip',
+                                                          u'Connection': u'close',
+                                                          u'User-Agent': u'python-requests.org',
+                                                          u'Host': u'0.0.0.0:50001',
+                                                          u'Content-Type': u'application/json',
+                                                          u'Authorization': u'test'}
         
+        assert json.loads(response.content)['data']['id'] == 'uuid1'
+        assert json.loads(response.content)['data']['webstore_url'] == 'http://0.0.0.0:50002/test/uuid1/data'
+        
+        
+    def test_excel_file(self):
+
+        file_path = os.path.join(os.path.dirname(__file__), "simple.xls")
+        data = {'file_path': file_path,
+                'resource_id': 'uuid2'}
+        context = {'webstore_url': 'http://0.0.0.0:50002',
+                   'ckan_url': 'http://0.0.0.0:50001',
+                   'apikey': 'test',
+                   'username': 'test'}
+        tasks.webstorer_upload(json.dumps(context), json.dumps(data))
+
+        response = requests.get('http://0.0.0.0:50002/test/uuid2/data.json')
 
 
+        assert json.loads(response.content) == [{u'date': u'2011-01-01 00:00:00', u'place': u'Galway', u'__id__': 1, u'temperature': u'1.0'},
+                                                {u'date': u'2011-01-02 00:00:00', u'place': u'Galway', u'__id__': 2, u'temperature': u'-1.0'},
+                                                {u'date': u'2011-01-03 00:00:00', u'place': u'Galway', u'__id__': 3, u'temperature': u'0.0'},
+                                                {u'date': u'2011-01-01 00:00:00', u'place': u'Berkeley', u'__id__': 4, u'temperature': u'6.0'},
+                                                {u'date': u'2011-01-02 00:00:00', u'place': u'Berkeley', u'__id__': 5, u'temperature': u'8.0'},
+                                                {u'date': u'2011-01-03 00:00:00', u'place': u'Berkeley', u'__id__': 6, u'temperature': u'5.0'}], json.loads(response.content)
 
+        response = requests.get('http://0.0.0.0:50001/last_request')
+        
+        assert json.loads(response.content)['headers'] == {u'Content-Length': u'126',
+                                                          u'Accept-Encoding': u'gzip',
+                                                          u'Connection': u'close',
+                                                          u'User-Agent': u'python-requests.org',
+                                                          u'Host': u'0.0.0.0:50001',
+                                                          u'Content-Type': u'application/json',
+                                                          u'Authorization': u'test'}
+        
+        assert json.loads(response.content)['data']['id'] == 'uuid2'
+        assert json.loads(response.content)['data']['webstore_url'] == 'http://0.0.0.0:50002/test/uuid2/data'

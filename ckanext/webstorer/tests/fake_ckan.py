@@ -3,16 +3,25 @@ app = Flask(__name__)
 
 request_store = []
 
-@app.route("/api/action/task_status_update_many", methods=['GET', 'POST'])
-def task_status_update_many():
+def store_request():
+    try:
+        data = request.json
+        headers = request.headers
+        request_store.append(
+            {"data": data,
+             "headers": dict(request.headers)}
+        )
+        return 'ok'
+    except Exception, e:
+        request_store.append(
+        str(e)
+        )
 
-    data = request.json
-    headers = request.headers
 
-    request_store.append({"data": data,
-                         "headers": dict(request.headers)}
-                         )
-    return 'ok'
+
+@app.route("/api/action/resource_update", methods=['GET', 'POST'])
+def resource_update():
+    return store_request()
 
 @app.route("/last_request", methods=['GET', 'POST'])
 def last_request():
