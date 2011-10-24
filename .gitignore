@@ -1,0 +1,7 @@
+*.pyc
+*.egg-info
+build
+*.egg
+.DS_Store
+*.swp
+ckanext/archiver/settings.py
