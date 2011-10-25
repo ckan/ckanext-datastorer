@@ -55,7 +55,7 @@ class TestUploadBasic(object):
         data = {'file_path': file_path,
                 'resource_id': 'uuid1'}
         context = {'webstore_url': 'http://0.0.0.0:50002',
-                   'ckan_url': 'http://0.0.0.0:50001',
+                   'site_url': 'http://0.0.0.0:50001',
                    'apikey': 'test',
                    'username': 'test'}
         tasks.webstorer_upload(json.dumps(context), json.dumps(data))
@@ -90,7 +90,7 @@ class TestUploadBasic(object):
         data = {'file_path': file_path,
                 'resource_id': 'uuid2'}
         context = {'webstore_url': 'http://0.0.0.0:50002',
-                   'ckan_url': 'http://0.0.0.0:50001',
+                   'site_url': 'http://0.0.0.0:50001',
                    'apikey': 'test',
                    'username': 'test'}
         tasks.webstorer_upload(json.dumps(context), json.dumps(data))

@@ -66,7 +66,7 @@ def webstorer_upload(context, data):
                              (response.status_code, response.content)
                             )
 
-    ckan_url = context['ckan_url'].rstrip('/')
+    ckan_url = context['site_url'].rstrip('/')
     ckan_request_url =  ckan_url + '/api/action/resource_update'
 
     ckan_resource_data = {
