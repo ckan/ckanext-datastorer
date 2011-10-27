@@ -8,10 +8,10 @@ import datetime
 class WebstorerError(Exception):
     pass
 
-def check_response_and_retry(response):
+def check_response_and_retry(response, webstore_request_url):
     try:
         if not response:
-            raise WebstorerError('Webstore is not reponding')
+            raise WebstorerError('Webstore is not reponding at %s with response %s' % (webstore_request_url, response))
     except Exception, e:
         webstorer_upload.retry(exc=e)
 
@@ -49,7 +49,7 @@ def webstorer_upload(context, data):
                                          )
     #check if resource is already there.
     webstore_response = requests.get(webstore_request_url+'.json')
-    check_response_and_retry(webstore_response)
+    check_response_and_retry(webstore_response, webstore_request_url+'.json')
 
     #should be an empty list as no tables should be there.
     if json.loads(webstore_response.content):
@@ -60,7 +60,7 @@ def webstorer_upload(context, data):
                              headers = {'Content-Type': 'application/json',
                                         'Authorization': context['apikey']},
                              )
-    check_response_and_retry(response)
+    check_response_and_retry(response, webstore_request_url+'.json')
     if response.status_code != 201:
         raise WebstorerError('Websore bad response code (%s). Response was %s'%
                              (response.status_code, response.content)
@@ -81,6 +81,11 @@ def webstorer_upload(context, data):
         headers = {'Content-Type': 'application/json',
                    'Authorization': context['apikey']},
         )
+
+    if response.status_code not in (201, 200):
+        raise WebstorerError('Ckan bad response code (%s). Response was %s'%
+                             (response.status_code, response.content)
+                            )
     
     
 

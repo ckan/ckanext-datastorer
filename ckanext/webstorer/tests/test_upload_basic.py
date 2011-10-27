@@ -117,3 +117,35 @@ class TestUploadBasic(object):
         
         assert json.loads(response.content)['data']['id'] == 'uuid2'
         assert json.loads(response.content)['data']['webstore_url'] == 'http://0.0.0.0:50002/test/uuid2/data'
+
+    def test_messier_file(self):
+
+        file_path = os.path.join(os.path.dirname(__file__), "3ffdcd42-5c63-4089-84dd-c23876259973")
+        
+        data = {'file_path': file_path,
+                'resource_id': 'uuid3'}
+        context = {'webstore_url': 'http://0.0.0.0:50002',
+                   'site_url': 'http://0.0.0.0:50001',
+                   'apikey': 'test',
+                   'username': 'test'}
+        tasks.webstorer_upload(json.dumps(context), json.dumps(data))
+
+        response = requests.get('http://0.0.0.0:50002/test/uuid3/data.json')
+
+
+        assert json.loads(response.content)[:3] == [
+            {u'Date': u'01/04/2009', u'Transaction Number': u'136980', u'Amount': u'2840.5000', u'Expense Area': u'HOUSING HEALTH + COMMUNITY SAFETY',
+             u'__id__': 1, u'Supplier': u'B H HAYES + SONS', u'Body Name': u'Adur District Council'},
+            {u'Date': u'01/04/2009', u'Transaction Number': u'139471', u'Amount': u'997.8100', u'Expense Area': u'STRATEGIC PERFORMANCE,HR&TRANSFORMATION',
+             u'__id__': 2, u'Supplier': u'BADENOCH + CLARK', u'Body Name': u'Adur District Council'},
+            {u'Date': u'01/04/2009', u'Transaction Number': u'139723', u'Amount': u'356.4000', u'Expense Area': u'RECYCLING & WASTE DIVISION',
+             u'__id__': 3, u'Supplier': u'B-O-S RECRUITMENT SERVICES', u'Body Name': u'Adur District Council'}], json.loads(response.content)[:3]
+
+
+
+
+
+
+
+
+
