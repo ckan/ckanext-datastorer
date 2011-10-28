@@ -63,12 +63,12 @@ class TestUploadBasic(object):
         response = requests.get('http://0.0.0.0:50002/test/uuid1/data.json')
 
 
-        assert json.loads(response.content) == [{u'date': u'2011-01-01', u'place': u'Galway', u'__id__': 1, u'temperature': u'1'},
-                                                {u'date': u'2011-01-02', u'place': u'Galway', u'__id__': 2, u'temperature': u'-1'},
-                                                {u'date': u'2011-01-03', u'place': u'Galway', u'__id__': 3, u'temperature': u'0'},
-                                                {u'date': u'2011-01-01', u'place': u'Berkeley', u'__id__': 4, u'temperature': u'6'},
-                                                {u'date': u'2011-01-02', u'place': u'Berkeley', u'__id__': 5, u'temperature': u'8'},
-                                                {u'date': u'2011-01-03', u'place': u'Berkeley', u'__id__': 6, u'temperature': u'5'}], json.loads(response.content)
+        assert json.loads(response.content) == [{u'date': u'2011-01-01', u'place': u'Galway', u'__id__': 1, u'temperature': 1},
+                                                {u'date': u'2011-01-02', u'place': u'Galway', u'__id__': 2, u'temperature': -1},
+                                                {u'date': u'2011-01-03', u'place': u'Galway', u'__id__': 3, u'temperature': 0},
+                                                {u'date': u'2011-01-01', u'place': u'Berkeley', u'__id__': 4, u'temperature': 6},
+                                                {u'date': u'2011-01-02', u'place': u'Berkeley', u'__id__': 5, u'temperature': 8},
+                                                {u'date': u'2011-01-03', u'place': u'Berkeley', u'__id__': 6, u'temperature': 5}], json.loads(response.content)
 
         response = requests.get('http://0.0.0.0:50001/last_request')
         
@@ -98,12 +98,12 @@ class TestUploadBasic(object):
         response = requests.get('http://0.0.0.0:50002/test/uuid2/data.json')
 
 
-        assert json.loads(response.content) == [{u'date': u'2011-01-01 00:00:00', u'place': u'Galway', u'__id__': 1, u'temperature': u'1.0'},
-                                                {u'date': u'2011-01-02 00:00:00', u'place': u'Galway', u'__id__': 2, u'temperature': u'-1.0'},
-                                                {u'date': u'2011-01-03 00:00:00', u'place': u'Galway', u'__id__': 3, u'temperature': u'0.0'},
-                                                {u'date': u'2011-01-01 00:00:00', u'place': u'Berkeley', u'__id__': 4, u'temperature': u'6.0'},
-                                                {u'date': u'2011-01-02 00:00:00', u'place': u'Berkeley', u'__id__': 5, u'temperature': u'8.0'},
-                                                {u'date': u'2011-01-03 00:00:00', u'place': u'Berkeley', u'__id__': 6, u'temperature': u'5.0'}], json.loads(response.content)
+        assert json.loads(response.content) == [{u'date': u'2011-01-01T00:00:00', u'place': u'Galway', u'__id__': 1, u'temperature': 1},
+                                                {u'date': u'2011-01-02T00:00:00', u'place': u'Galway', u'__id__': 2, u'temperature': -1},
+                                                {u'date': u'2011-01-03T00:00:00', u'place': u'Galway', u'__id__': 3, u'temperature': 0},
+                                                {u'date': u'2011-01-01T00:00:00', u'place': u'Berkeley', u'__id__': 4, u'temperature': 6},
+                                                {u'date': u'2011-01-02T00:00:00', u'place': u'Berkeley', u'__id__': 5, u'temperature': 8},
+                                                {u'date': u'2011-01-03T00:00:00', u'place': u'Berkeley', u'__id__': 6, u'temperature': 5}], json.loads(response.content)
 
         response = requests.get('http://0.0.0.0:50001/last_request')
         
@@ -134,11 +134,11 @@ class TestUploadBasic(object):
 
 
         assert json.loads(response.content)[:3] == [
-            {u'Date': u'01/04/2009', u'Transaction Number': u'136980', u'Amount': u'2840.5000', u'Expense Area': u'HOUSING HEALTH + COMMUNITY SAFETY',
+            {u'Date': u'01/04/2009', u'Transaction Number': 136980, u'Amount': 2840.5, u'Expense Area': u'HOUSING HEALTH + COMMUNITY SAFETY',
              u'__id__': 1, u'Supplier': u'B H HAYES + SONS', u'Body Name': u'Adur District Council'},
-            {u'Date': u'01/04/2009', u'Transaction Number': u'139471', u'Amount': u'997.8100', u'Expense Area': u'STRATEGIC PERFORMANCE,HR&TRANSFORMATION',
+            {u'Date': u'01/04/2009', u'Transaction Number': 139471, u'Amount': 997.80999999999995, u'Expense Area': u'STRATEGIC PERFORMANCE,HR&TRANSFORMATION',
              u'__id__': 2, u'Supplier': u'BADENOCH + CLARK', u'Body Name': u'Adur District Council'},
-            {u'Date': u'01/04/2009', u'Transaction Number': u'139723', u'Amount': u'356.4000', u'Expense Area': u'RECYCLING & WASTE DIVISION',
+            {u'Date': u'01/04/2009', u'Transaction Number': 139723, u'Amount': 356.39999999999998, u'Expense Area': u'RECYCLING & WASTE DIVISION',
              u'__id__': 3, u'Supplier': u'B-O-S RECRUITMENT SERVICES', u'Body Name': u'Adur District Council'}], json.loads(response.content)[:3]
 
 

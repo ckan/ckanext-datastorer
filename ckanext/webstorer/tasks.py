@@ -4,6 +4,8 @@ from messytables import CSVTableSet, XLSTableSet, types_processor, headers_guess
   offset_processor
 import requests
 import datetime
+import messytables
+
 
 class WebstorerError(Exception):
     pass
@@ -14,6 +16,41 @@ def check_response_and_retry(response, webstore_request_url):
             raise WebstorerError('Webstore is not reponding at %s with response %s' % (webstore_request_url, response))
     except Exception, e:
         webstorer_upload.retry(exc=e)
+
+def guess_types(rows):
+    ''' Simple guess types of fields, only allowed are int, float and string'''
+
+    headers = rows[0].keys()
+    guessed_types = [] 
+    for header in headers:
+        data_types = set([int, float])
+        for row in rows:
+            if not row.get(header):
+                continue
+            for data_type in list(data_types):
+                try:
+                    data_type(row[header])
+                except (TypeError, ValueError):
+                    data_types.discard(data_type)
+            if not data_types:
+                break
+        if int in data_types:
+            guessed_types.append(messytables.IntegerType())
+        elif float in data_types:
+            guessed_types.append(messytables.FloatType())
+        else:
+            guessed_types.append(messytables.StringType())
+    return guessed_types
+                
+def datetime_procesor():
+    def datetime_convert(row_set, row):
+        for cell in row:
+            if isinstance(cell.value, datetime.datetime):
+                cell.value = cell.value.isoformat()
+                cell.type = messytables.StringType()
+        return row
+    return datetime_convert
+
 
 @task(name = "webstorer.upload", max_retries=24*7, default_retry_delay=3600)
 def webstorer_upload(context, data):
@@ -31,16 +68,22 @@ def webstorer_upload(context, data):
         table_sets = CSVTableSet.from_fileobj(f)
 
     ##only first sheet in xls for time being
+    
     row_set = table_sets.tables[0]
     offset, headers = headers_guess(row_set.sample)
     row_set.register_processor(headers_processor(headers))
     row_set.register_processor(offset_processor(offset + 1))
+    row_set.register_processor(datetime_procesor())
+
+    types = guess_types(list(row_set.dicts(sample=True)))
+    row_set.register_processor(offset_processor(offset + 1))
+    row_set.register_processor(types_processor(types))
 
     rows = []
+    
     for row in row_set.dicts():
-        for item in row:
-            row[item] = unicode(row[item])
         rows.append(row)
+
 
     webstore_url = context.get('webstore_url').rstrip('/')
     webstore_request_url = '%s/%s/%s' % (webstore_url,
