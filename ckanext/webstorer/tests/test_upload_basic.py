@@ -51,9 +51,9 @@ class TestUploadBasic(object):
 
     def test_csv_file(self):
 
-        file_path = os.path.join(os.path.dirname(__file__), "simple.csv")
-        data = {'file_path': file_path,
-                'resource_id': 'uuid1'}
+        data = {'url': 'http://0.0.0.0:50001/static/simple.csv',
+                'format': 'csv',
+                'id': 'uuid1'}
         context = {'webstore_url': 'http://0.0.0.0:50002',
                    'site_url': 'http://0.0.0.0:50001',
                    'apikey': 'test',
@@ -86,9 +86,10 @@ class TestUploadBasic(object):
         
     def test_excel_file(self):
 
-        file_path = os.path.join(os.path.dirname(__file__), "simple.xls")
-        data = {'file_path': file_path,
-                'resource_id': 'uuid2'}
+        
+        data = {'url': 'http://0.0.0.0:50001/static/simple.xls',
+                'format': 'xls',
+                'id': 'uuid2'}
         context = {'webstore_url': 'http://0.0.0.0:50002',
                    'site_url': 'http://0.0.0.0:50001',
                    'apikey': 'test',
@@ -121,9 +122,10 @@ class TestUploadBasic(object):
     def test_messier_file(self):
 
         file_path = os.path.join(os.path.dirname(__file__), "3ffdcd42-5c63-4089-84dd-c23876259973")
+        data = {'url': 'http://0.0.0.0:50001/static/3ffdcd42-5c63-4089-84dd-c23876259973',
+                'format': 'csv',
+                'id': 'uuid3'}
         
-        data = {'file_path': file_path,
-                'resource_id': 'uuid3'}
         context = {'webstore_url': 'http://0.0.0.0:50002',
                    'site_url': 'http://0.0.0.0:50001',
                    'apikey': 'test',

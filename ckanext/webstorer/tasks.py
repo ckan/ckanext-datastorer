@@ -2,10 +2,21 @@ from celery.task import task
 import json
 from messytables import CSVTableSet, XLSTableSet, types_processor, headers_guess, headers_processor, \
   offset_processor
+from ckanext.archiver.tasks import download
 import requests
 import datetime
 import messytables
 
+DATA_FORMATS = [ 
+    'csv',
+    'text/csv',
+    'txt',
+    'text/plain',
+    'xls',
+    'application/ms-excel',
+    'application/xls',
+    'application/octet-stream'
+]
 
 class WebstorerError(Exception):
     pass
@@ -56,19 +67,20 @@ def datetime_procesor():
 def webstorer_upload(context, data):
 
     context = json.loads(context)
-    data = json.loads(data)
-
-    file_path = data['file_path']
-    f = open(file_path, 'rb')          
-
+    resource = json.loads(data)
     
-    if file_path.split('.')[-1] == 'xls':
+    excel_types = ['xls', 'application/ms-excel', 'application/xls']
+
+    result = download(context, resource, data_formats=DATA_FORMATS)
+    content_type = result['headers'].get('content-type', '')
+    f = open(result['saved_file'], 'rb')
+
+    if content_type in excel_types or resource['format'] in excel_types:
         table_sets = XLSTableSet.from_fileobj(f)
     else:
         table_sets = CSVTableSet.from_fileobj(f)
 
     ##only first sheet in xls for time being
-    
     row_set = table_sets.tables[0]
     offset, headers = headers_guess(row_set.sample)
     row_set.register_processor(headers_processor(headers))
@@ -86,9 +98,10 @@ def webstorer_upload(context, data):
 
 
     webstore_url = context.get('webstore_url').rstrip('/')
+    
     webstore_request_url = '%s/%s/%s' % (webstore_url,
                                          context['username'],
-                                         data['resource_id']
+                                         resource['id']
                                          )
     #check if resource is already there.
     webstore_response = requests.get(webstore_request_url+'.json')
@@ -113,7 +126,7 @@ def webstorer_upload(context, data):
     ckan_request_url =  ckan_url + '/api/action/resource_update'
 
     ckan_resource_data = {
-        'id': data["resource_id"],
+        'id': resource["id"],
         'webstore_url': webstore_request_url+'/data',
         'webstore_last_updated': datetime.datetime.now().isoformat()
     }

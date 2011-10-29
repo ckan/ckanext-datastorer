@@ -24,8 +24,10 @@ setup(
     ],
 	entry_points=\
 	"""
-        [ckan.plugins]
-	# Add plugins here, eg
-	# myplugin=ckanext.webstorer:PluginClass
+    [paste.paster_command]
+    webstorer = ckanext.webstorer.commands:Webstorer
+
+    [ckan.plugins]
+    webstorer = ckanext.webstorer.plugin:WebstorerPlugin
 	""",
 )
