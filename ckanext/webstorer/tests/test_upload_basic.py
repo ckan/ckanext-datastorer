@@ -36,13 +36,14 @@ class TestUploadBasic(object):
                     )
         )
         #make sure services are running
-        for i in range(0,12):
+        for i in range(0,50):
             time.sleep(0.1)
             response1 = requests.get('http://0.0.0.0:50001')
             response2 = requests.get('http://0.0.0.0:50002')
             if not response1 or not response2:
                 continue
             return
+        cls.teardown_class()
         raise Exception('services did not start!')
 
 
@@ -183,6 +184,8 @@ class TestUploadBasic(object):
 
         response = requests.get('http://0.0.0.0:50001/last_request')
 
-        assert response.content == {u'headers': {u'Content-Length': u'192', u'Accept-Encoding': u'gzip', u'Connection': u'close', u'User-Agent': u'python-requests.org', u'Host': u'0.0.0.0:50001', u'Content-Type': u'application/json', u'Authorization': u'test'}, u'data': {u'entity_id': u'uuid3', u'task_type': u'archiver', u'last_updated': u'2011-11-02T11:39:46.647070', u'entity_type': u'resource', u'key': u'celery_task_id', u'error': u'LinkCheckerError: URL unobtainable'}}, json.loads(response.content)
+        assert json.loads(response.content)['headers'] == {u'Content-Length': u'192', u'Accept-Encoding': u'gzip', u'Connection': u'close', u'User-Agent': u'python-requests.org', u'Host': u'0.0.0.0:50001', u'Content-Type': u'application/json', u'Authorization': u'test'}
+        
+        assert json.loads(response.content)['data']['error'] == 'LinkCheckerError: URL unobtainable'
 
 
