@@ -3,6 +3,7 @@ from ckanext.archiver.tasks import LinkCheckerError
 from nose.tools import assert_raises
 import os
 import json
+from nose.tools import raises
 import subprocess
 import requests
 import sqlite3
@@ -144,7 +145,29 @@ class TestUploadBasic(object):
             {u'Date': u'01/04/2009', u'Transaction Number': 139723, u'Amount': 356.39999999999998, u'Expense Area': u'RECYCLING & WASTE DIVISION',
              u'__id__': 3, u'Supplier': u'B-O-S RECRUITMENT SERVICES', u'Body Name': u'Adur District Council'}], json.loads(response.content)[:3]
 
+    @raises(tasks.WebstorerError)
+    def test_missing_webstore_url_config_option_raises_exception(self):
+        """
+        Tests that if the "ckan.webstore_url" configuration option is missing a
+        meaningful exception is thrown when trying to upload to the webstore.
 
+        TODO: is it possible to check for this configuration option at startup?
+        """
+        
+        data = {'url': 'http://0.0.0.0:50001/static/simple.csv',
+                'format': 'csv',
+                'id': 'uuid1'}
+        context = {'webstore_url': None,
+                   'site_url': 'http://0.0.0.0:50001',
+                   'apikey': 'test',
+                   'username': 'test'}
+
+        try:
+            tasks.webstorer_upload(json.dumps(context), json.dumps(data))
+        except Exception, e:
+            assert "webstore_url" in str(e)
+            raise
+            
     def test_error_bad_url(self):
 
         data = {'url': 'http://0.0.0.0:50001/static/3ffdcd42',
@@ -161,8 +184,5 @@ class TestUploadBasic(object):
         response = requests.get('http://0.0.0.0:50001/last_request')
 
         assert response.content == {u'headers': {u'Content-Length': u'192', u'Accept-Encoding': u'gzip', u'Connection': u'close', u'User-Agent': u'python-requests.org', u'Host': u'0.0.0.0:50001', u'Content-Type': u'application/json', u'Authorization': u'test'}, u'data': {u'entity_id': u'uuid3', u'task_type': u'archiver', u'last_updated': u'2011-11-02T11:39:46.647070', u'entity_type': u'resource', u'key': u'celery_task_id', u'error': u'LinkCheckerError: URL unobtainable'}}, json.loads(response.content)
-
-
-
 
 

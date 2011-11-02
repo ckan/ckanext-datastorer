@@ -108,6 +108,8 @@ def _webstorer_upload(context, resource):
     for row in row_set.dicts():
         rows.append(row)
 
+    if not context.get('webstore_url'):
+        raise WebstorerError('Configuration error: "ckan.webstore_url" is not defined.')
 
     webstore_url = context.get('webstore_url').rstrip('/')
     
