@@ -2,7 +2,7 @@ from celery.task import task
 import json
 from messytables import CSVTableSet, XLSTableSet, types_processor, headers_guess, headers_processor, \
   offset_processor
-from ckanext.archiver.tasks import download
+from ckanext.archiver.tasks import download, update_task_status
 import requests
 import datetime
 import messytables
@@ -62,13 +62,25 @@ def datetime_procesor():
         return row
     return datetime_convert
 
-
 @task(name = "webstorer.upload", max_retries=24*7, default_retry_delay=3600)
 def webstorer_upload(context, data):
+    try:
+        data = json.loads(data)
+        context = json.loads(context)
+        return _webstorer_upload(context, data)
+    except Exception, e:
+        update_task_status(context, {
+            'entity_id': data['id'],
+            'entity_type': u'resource',
+            'task_type': 'archiver',
+            'key': u'celery_task_id',
+            'error': '%s: %s' % (e.__class__.__name__,  unicode(e)),
+            'last_updated': datetime.datetime.now().isoformat()
+        })
+        raise
 
-    context = json.loads(context)
-    resource = json.loads(data)
-    
+def _webstorer_upload(context, resource):
+
     excel_types = ['xls', 'application/ms-excel', 'application/xls']
 
     result = download(context, resource, data_formats=DATA_FORMATS)

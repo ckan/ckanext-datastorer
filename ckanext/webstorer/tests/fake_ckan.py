@@ -29,6 +29,10 @@ def store_request():
 def resource_update():
     return store_request()
 
+@app.route("/api/action/task_status_update", methods=['GET', 'POST'])
+def task_update():
+    return store_request()
+
 @app.route("/last_request", methods=['GET', 'POST'])
 def last_request():
     return jsonify(request_store.pop())
