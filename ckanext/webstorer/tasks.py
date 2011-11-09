@@ -1,8 +1,8 @@
-from celery.task import task
 import json
 from messytables import CSVTableSet, XLSTableSet, types_processor, headers_guess, headers_processor, \
   offset_processor
 from ckanext.archiver.tasks import download, update_task_status
+from ckan.lib.celery_app import celery
 import requests
 import datetime
 import messytables
@@ -23,7 +23,7 @@ class WebstorerError(Exception):
 
 def check_response_and_retry(response, webstore_request_url):
     try:
-        if not response:
+        if not response.status_code:
             raise WebstorerError('Webstore is not reponding at %s with response %s' % (webstore_request_url, response))
     except Exception, e:
         webstorer_upload.retry(exc=e)
@@ -62,7 +62,8 @@ def datetime_procesor():
         return row
     return datetime_convert
 
-@task(name = "webstorer.upload", max_retries=24*7, default_retry_delay=3600)
+
+@celery.task(name = "webstorer.upload", max_retries=24*7, default_retry_delay=3600)
 def webstorer_upload(context, data):
     try:
         data = json.loads(data)
@@ -122,7 +123,7 @@ def _webstorer_upload(context, resource):
     check_response_and_retry(webstore_response, webstore_request_url+'.json')
 
     #should be an empty list as no tables should be there.
-    if json.loads(webstore_response.content):
+    if json.loads(webstore_response.content)['data']:
         raise WebstorerError('Webstore already has this resource')
 
     response = requests.post(webstore_request_url+'/data',

@@ -29,5 +29,8 @@ setup(
 
     [ckan.plugins]
     webstorer = ckanext.webstorer.plugin:WebstorerPlugin
+
+    [ckan.celery_task]
+    tasks = ckanext.webstorer.celery_import:task_imports
 	""",
 )

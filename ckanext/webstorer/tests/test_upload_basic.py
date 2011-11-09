@@ -67,7 +67,7 @@ class TestUploadBasic(object):
         response = requests.get('http://0.0.0.0:50002/test/uuid1/data.json')
 
 
-        assert json.loads(response.content) == [{u'date': u'2011-01-01', u'place': u'Galway', u'__id__': 1, u'temperature': 1},
+        assert json.loads(response.content)['data'] == [{u'date': u'2011-01-01', u'place': u'Galway', u'__id__': 1, u'temperature': 1},
                                                 {u'date': u'2011-01-02', u'place': u'Galway', u'__id__': 2, u'temperature': -1},
                                                 {u'date': u'2011-01-03', u'place': u'Galway', u'__id__': 3, u'temperature': 0},
                                                 {u'date': u'2011-01-01', u'place': u'Berkeley', u'__id__': 4, u'temperature': 6},
@@ -103,7 +103,7 @@ class TestUploadBasic(object):
         response = requests.get('http://0.0.0.0:50002/test/uuid2/data.json')
 
 
-        assert json.loads(response.content) == [{u'date': u'2011-01-01T00:00:00', u'place': u'Galway', u'__id__': 1, u'temperature': 1},
+        assert json.loads(response.content)['data'] == [{u'date': u'2011-01-01T00:00:00', u'place': u'Galway', u'__id__': 1, u'temperature': 1},
                                                 {u'date': u'2011-01-02T00:00:00', u'place': u'Galway', u'__id__': 2, u'temperature': -1},
                                                 {u'date': u'2011-01-03T00:00:00', u'place': u'Galway', u'__id__': 3, u'temperature': 0},
                                                 {u'date': u'2011-01-01T00:00:00', u'place': u'Berkeley', u'__id__': 4, u'temperature': 6},
@@ -138,7 +138,7 @@ class TestUploadBasic(object):
         response = requests.get('http://0.0.0.0:50002/test/uuid3/data.json')
 
 
-        assert json.loads(response.content)[:3] == [
+        assert json.loads(response.content)['data'][:3] == [
             {u'Date': u'01/04/2009', u'Transaction Number': 136980, u'Amount': 2840.5, u'Expense Area': u'HOUSING HEALTH + COMMUNITY SAFETY',
              u'__id__': 1, u'Supplier': u'B H HAYES + SONS', u'Body Name': u'Adur District Council'},
             {u'Date': u'01/04/2009', u'Transaction Number': 139471, u'Amount': 997.80999999999995, u'Expense Area': u'STRATEGIC PERFORMANCE,HR&TRANSFORMATION',
@@ -173,7 +173,7 @@ class TestUploadBasic(object):
 
         data = {'url': 'http://0.0.0.0:50001/static/3ffdcd42',
                 'format': 'csv',
-                'id': 'uuid3'}
+                'id': 'uuid4'}
         
         context = {'webstore_url': 'http://0.0.0.0:50002',
                    'site_url': 'http://0.0.0.0:50001',
@@ -188,4 +188,20 @@ class TestUploadBasic(object):
         
         assert json.loads(response.content)['data']['error'] == 'LinkCheckerError: URL unobtainable'
 
+
+    def test_error_bad_file(self):
+
+        data = {'url': 'http://0.0.0.0:50001/static/bad_file.csv',
+                'format': 'csv',
+                'id': 'uuid5'}
+        
+        context = {'webstore_url': 'http://0.0.0.0:50002',
+                   'site_url': 'http://0.0.0.0:50001',
+                   'apikey': 'test',
+                   'username': 'test'}
+
+        response = tasks.webstorer_upload(json.dumps(context), json.dumps(data))
+        
+
+        response = requests.get('http://0.0.0.0:50002/test/uuid5/data.json')
 

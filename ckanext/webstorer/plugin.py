@@ -2,7 +2,7 @@ from ckan import model
 from ckan.plugins import SingletonPlugin, implements, IDomainObjectModification, \
     IResourceUrlChange, IConfigurable
 from ckan.logic import get_action
-from celery.execute import send_task
+from ckan.lib.celery_app import celery
 from ckan.lib.dictization.model_dictize import resource_dictize
 import json
 from datetime import datetime
@@ -43,7 +43,7 @@ class WebstorerPlugin(SingletonPlugin):
             'webstore_url': self.webstore_url
         })
         data = json.dumps(resource_dictize(resource, {'model': model}))
-        webstorer_task = send_task("webstorer.upload", [context, data])
+        webstorer_task = celery.send_task("webstorer.upload", [context, data])
 
         # update the task_status table
         webstorer_task_status = {

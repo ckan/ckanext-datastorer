@@ -6,7 +6,6 @@ from pylons import config
 from ckan.lib.cli import CkanCommand
 from ckan.logic import get_action
 from ckan import model
-import tasks
 import logging
 logger = logging.getLogger()
 
@@ -36,6 +35,9 @@ class Webstorer(CkanCommand):
 
         cmd = self.args[0]
         self._load_config()
+        #import after load config so CKAN_CONFIG evironment variable can be set
+        from ckan.lib.celery_app import celery
+        import tasks
         user = get_action('get_site_user')({'model': model, 'ignore_auth': True}, {})
         context = json.dumps({
             'site_url': config['ckan.site_url'],
@@ -62,7 +64,7 @@ class Webstorer(CkanCommand):
 
                     logger.info('Webstoring resource from resource %s from package %s' % (
                         resource['url'], package['name']))
-                    webstorer_task = tasks.webstorer_upload.delay(context, data) 
+                    webstorer_task = celery.send_task("webstorer.upload", [context, data])
                     # update the task_status table
                     webstorer_task_status = {
                         'entity_id': resource['id'],
