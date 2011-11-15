@@ -21,6 +21,8 @@ setup(
 	zip_safe=False,
     install_requires = [
         'messytables>=0.1.1',
+        'celery>=2.4.2',
+        'kombu-sqlalchemy==1.1.0',
     ],
 	entry_points=\
 	"""
