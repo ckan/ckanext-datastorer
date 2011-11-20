@@ -43,7 +43,7 @@ Using this file as a template and add to /etc/supservisor/conf.d:
 Configuration
 -------------
 
-The only configuration that is is nee
+The only configuration that is is needed
 
     ckan.webstore_url=http://0.0.0.0:5555
 
