@@ -184,7 +184,7 @@ class TestUploadBasic(object):
 
         response = requests.get('http://0.0.0.0:50001/last_request')
 
-        assert json.loads(response.content)['headers'] == {u'Content-Length': u'192', u'Accept-Encoding': u'gzip', u'Connection': u'close', u'User-Agent': u'python-requests.org', u'Host': u'0.0.0.0:50001', u'Content-Type': u'application/json', u'Authorization': u'test'}
+        assert json.loads(response.content)['headers'] == {u'Content-Length': u'193', u'Accept-Encoding': u'gzip', u'Connection': u'close', u'User-Agent': u'python-requests.org', u'Host': u'0.0.0.0:50001', u'Content-Type': u'application/json', u'Authorization': u'test'}
         
         assert json.loads(response.content)['data']['error'] == 'LinkCheckerError: URL unobtainable'
 
@@ -200,8 +200,8 @@ class TestUploadBasic(object):
                    'apikey': 'test',
                    'username': 'test'}
 
-        response = tasks.webstorer_upload(json.dumps(context), json.dumps(data))
-        
+        assert_raises(LinkCheckerError, tasks.webstorer_upload, json.dumps(context), json.dumps(data))
 
         response = requests.get('http://0.0.0.0:50002/test/uuid5/data.json')
+        assert response.status_code == 404
 
