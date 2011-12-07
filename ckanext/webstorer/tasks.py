@@ -75,6 +75,7 @@ def webstorer_upload(context, data):
             'entity_type': u'resource',
             'task_type': 'webstorer',
             'key': u'celery_task_id',
+            'value': unicode(webstorer_upload.request.id),
             'error': '%s: %s' % (e.__class__.__name__,  unicode(e)),
             'last_updated': datetime.datetime.now().isoformat()
         })
@@ -157,7 +158,4 @@ def _webstorer_upload(context, resource):
         raise WebstorerError('Ckan bad response code (%s). Response was %s'%
                              (response.status_code, response.content)
                             )
-    
-    
-
 

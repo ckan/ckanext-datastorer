@@ -6,6 +6,7 @@ from pylons import config
 from ckan.lib.cli import CkanCommand
 from ckan.logic import get_action
 from ckan import model
+from ckan.model.types import make_uuid
 import logging
 logger = logging.getLogger()
 
@@ -64,23 +65,26 @@ class Webstorer(CkanCommand):
 
                     logger.info('Webstoring resource from resource %s from package %s' % (
                         resource['url'], package['name']))
-                    webstorer_task = celery.send_task("webstorer.upload", [context, data])
-                    # update the task_status table
+
+                    task_id = make_uuid()
                     webstorer_task_status = {
                         'entity_id': resource['id'],
                         'entity_type': u'resource',
                         'task_type': u'webstorer',
                         'key': u'celery_task_id',
-                        'value': webstorer_task.task_id,
+                        'value': task_id,
                         'last_updated': datetime.now().isoformat()
                     }
                     webstorer_task_context = {
                         'model': model, 
-                        'session': model.Session, 
                         'user': user.get('name')
                     }
+
                     get_action('task_status_update')(webstorer_task_context, 
                                                      webstorer_task_status)
+                    celery.send_task("webstorer.upload", 
+                                     args=[context, data], 
+                                     task_id=task_id)
         else:
             logger.error('Command %s not recognized' % (cmd,))
 
