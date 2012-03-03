@@ -15,7 +15,8 @@ DATA_FORMATS = [
     'xls',
     'application/ms-excel',
     'application/xls',
-    'application/octet-stream'
+    'application/octet-stream',
+    'text/comma-separated-values'
 ]
 
 class WebstorerError(Exception):
