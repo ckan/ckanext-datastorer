@@ -105,45 +105,39 @@ def _webstorer_upload(context, resource):
     row_set.register_processor(offset_processor(offset + 1))
     row_set.register_processor(types_processor(types))
 
-    rows = []
+
+    ckan_url = context['site_url'].rstrip('/')
     
-    for row in row_set.dicts():
-        rows.append(row)
+    webstore_request_url = '%s/api/data/%s/' % (ckan_url,
+                                                resource['id']
+                                                )
 
-    if not context.get('webstore_url'):
-        raise WebstorerError('Configuration error: "ckan.webstore_url" is not defined.')
-
-    webstore_url = context.get('webstore_url').rstrip('/')
-    
-    webstore_request_url = '%s/%s/%s' % (webstore_url,
-                                         context['username'],
-                                         resource['id']
-                                         )
-    #check if resource is already there.
-    webstore_response = requests.get(webstore_request_url+'.json')
-    check_response_and_retry(webstore_response, webstore_request_url+'.json')
-
-    #should be an empty list as no tables should be there.
-    if json.loads(webstore_response.content)['data']:
-        raise WebstorerError('Webstore already has this resource')
-
-    response = requests.post(webstore_request_url+'/data',
-                             data = json.dumps(rows),
+    def send_request(data):
+        return requests.post(webstore_request_url + '_bulk',
+                             data = "%s%s" % ("\n".join(data), "\n"),
                              headers = {'Content-Type': 'application/json',
                                         'Authorization': context['apikey']},
                              )
-    check_response_and_retry(response, webstore_request_url+'.json')
-    if response.status_code != 201:
-        raise WebstorerError('Websore bad response code (%s). Response was %s'%
-                             (response.status_code, response.content)
-                            )
 
-    ckan_url = context['site_url'].rstrip('/')
+    data = []
+    for count,dict_ in enumerate(row_set.dicts()):
+        data.append(json.dumps({"index": {"_id": count+1}}))
+        data.append(json.dumps(dict_))
+        if (count % 100) == 0:
+            response = send_request(data)
+            check_response_and_retry(response, webstore_request_url+'_mapping')
+            data[:] = []
+
+    if data:
+        respose = send_request(data)
+        check_response_and_retry(response, webstore_request_url+'_mapping')
+
+
     ckan_request_url =  ckan_url + '/api/action/resource_update'
 
     ckan_resource_data = {
         'id': resource["id"],
-        'webstore_url': webstore_request_url+'/data',
+        'webstore_url': webstore_request_url,
         'webstore_last_updated': datetime.datetime.now().isoformat()
     }
 

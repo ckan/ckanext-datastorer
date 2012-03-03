@@ -4,6 +4,7 @@ from ckan.plugins import SingletonPlugin, implements, IDomainObjectModification,
     IResourceUrlChange, IConfigurable
 from ckan.logic import get_action
 from ckan.lib.celery_app import celery
+import ckan.lib.helpers as h
 from ckan.lib.dictization.model_dictize import resource_dictize
 import json
 from datetime import datetime
@@ -15,11 +16,6 @@ class WebstorerPlugin(SingletonPlugin):
     """
     implements(IDomainObjectModification, inherit=True)
     implements(IResourceUrlChange)
-    implements(IConfigurable)
-
-    def configure(self, config):
-        self.site_url = config.get('ckan.site_url')
-        self.webstore_url = config.get('ckan.webstore_url')
 
     def notify(self, entity, operation=None):
         if not isinstance(entity, model.Resource):
@@ -37,11 +33,11 @@ class WebstorerPlugin(SingletonPlugin):
         user = get_action('get_site_user')({'model': model,
                                             'ignore_auth': True,
                                             'defer_commit': True}, {})
+
         context = json.dumps({
-            'site_url': self.site_url,
+            'site_url': h.url_for('/', qualified = True),
             'apikey': user.get('apikey'),
             'username': user.get('name'),
-            'webstore_url': self.webstore_url
         })
         data = json.dumps(resource_dictize(resource, {'model': model}))
 
