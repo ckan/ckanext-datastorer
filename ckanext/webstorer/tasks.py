@@ -85,7 +85,7 @@ def webstorer_upload(context, data):
 
 def _webstorer_upload(context, resource):
 
-    excel_types = ['xls', 'application/ms-excel', 'application/xls']
+    excel_types = ['xls', 'application/ms-excel', 'application/xls', 'application/vnd.ms-excel']
 
     result = download(context, resource, data_formats=DATA_FORMATS)
     content_type = result['headers'].get('content-type', '')

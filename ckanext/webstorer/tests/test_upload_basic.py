@@ -57,6 +57,7 @@ class TestUploadBasic(object):
 
         context = {'site_url': 'http://0.0.0.0:8088',
                    'apikey': 'moo',
+                   'site_user_apikey': 'moo',
                    'username': 'moo'}
 
         resource_id = self.make_resource_id()
@@ -84,6 +85,7 @@ class TestUploadBasic(object):
                 'id': 'uuid2'}
         context = {'site_url': 'http://0.0.0.0:8088',
                    'apikey': 'moo',
+                   'site_user_apikey': 'moo',
                    'username': 'moo'}
         resource_id = self.make_resource_id()
         data['id'] = resource_id
@@ -108,6 +110,7 @@ class TestUploadBasic(object):
         
         context = {'site_url': 'http://0.0.0.0:8088',
                    'apikey': 'moo',
+                   'site_user_apikey': 'moo',
                    'username': 'moo'}
 
         resource_id = self.make_resource_id()
@@ -131,6 +134,7 @@ class TestUploadBasic(object):
         
         context = {'site_url': 'http://0.0.0.0:8088',
                    'apikey': 'moo',
+                   'site_user_apikey': 'moo',
                    'username': 'moo'}
 
         resource_id = self.make_resource_id()
