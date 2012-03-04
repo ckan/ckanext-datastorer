@@ -14,6 +14,7 @@ DATA_FORMATS = [
     'text/plain',
     'xls',
     'application/ms-excel',
+    'application/vnd.ms-excel',    
     'application/xls',
     'application/octet-stream',
     'text/comma-separated-values'

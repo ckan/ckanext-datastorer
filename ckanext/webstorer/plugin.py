@@ -37,6 +37,7 @@ class WebstorerPlugin(SingletonPlugin):
         context = json.dumps({
             'site_url': h.url_for('/', qualified = True),
             'apikey': user.get('apikey'),
+            'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),
         })
         data = json.dumps(resource_dictize(resource, {'model': model}))
