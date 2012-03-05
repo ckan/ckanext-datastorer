@@ -1,4 +1,4 @@
-import ckanext.webstorer.tasks as tasks
+import ckanext.datastorer.tasks as tasks
 from ckanext.archiver.tasks import LinkCheckerError
 from nose.tools import assert_raises
 import os
@@ -63,7 +63,7 @@ class TestUploadBasic(object):
         resource_id = self.make_resource_id()
         data['id'] = resource_id
 
-        tasks.webstorer_upload(json.dumps(context), json.dumps(data))
+        tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
         import time; time.sleep(0.5)
         
@@ -90,7 +90,7 @@ class TestUploadBasic(object):
         resource_id = self.make_resource_id()
         data['id'] = resource_id
 
-        tasks.webstorer_upload(json.dumps(context), json.dumps(data))
+        tasks.datastorer_upload(json.dumps(context), json.dumps(data))
         response = requests.get('http://0.0.0.0:50002/test/uuid2/data.json')
 
         import time; time.sleep(0.5)
@@ -116,7 +116,7 @@ class TestUploadBasic(object):
         resource_id = self.make_resource_id()
         data['id'] = resource_id
 
-        tasks.webstorer_upload(json.dumps(context), json.dumps(data))
+        tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
         response = requests.get(
             'http://0.0.0.0:8088/api/data/%s/_search?q=*' % resource_id,
@@ -140,7 +140,7 @@ class TestUploadBasic(object):
         resource_id = self.make_resource_id()
         data['id'] = resource_id
 
-        assert_raises(LinkCheckerError, tasks.webstorer_upload, json.dumps(context), json.dumps(data))
+        assert_raises(LinkCheckerError, tasks.datastorer_upload, json.dumps(context), json.dumps(data))
 
 
 
@@ -157,7 +157,7 @@ class TestUploadBasic(object):
         #resource_id = self.make_resource_id()
         #data['id'] = resource_id
 
-        #assert_raises(LinkCheckerError, tasks.webstorer_upload, json.dumps(context), json.dumps(data))
+        #assert_raises(LinkCheckerError, tasks.datastorer_upload, json.dumps(context), json.dumps(data))
 
         #response = requests.get(
             #'http://0.0.0.0:8088/api/data/%s/_search?q=*' % resource_id,

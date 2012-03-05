@@ -4,7 +4,7 @@ import sys, os
 version = '0.0'
 
 setup(
-	name='ckanext-webstorer',
+	name='ckanext-datastorer',
 	version=version,
 	description="Tasks that upload data to the webstore.",
 	long_description="""\
@@ -13,10 +13,10 @@ setup(
 	keywords='',
 	author='CKAN team.',
 	author_email='ckan-dev@okfn.org',
-	url='https://github.com/okfn/ckenext-webstorer',
+	url='https://github.com/okfn/ckenext-datastorer',
 	license='AGPL',
 	packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-	namespace_packages=['ckanext', 'ckanext.webstorer'],
+	namespace_packages=['ckanext', 'ckanext.datastorer'],
 	include_package_data=True,
 	zip_safe=False,
     install_requires = [
@@ -28,12 +28,12 @@ setup(
 	entry_points=\
 	"""
     [paste.paster_command]
-    webstorer = ckanext.webstorer.commands:Webstorer
+    datastorer = ckanext.datastorer.commands:Webstorer
 
     [ckan.plugins]
-    webstorer = ckanext.webstorer.plugin:WebstorerPlugin
+    datastorer = ckanext.datastorer.plugin:WebstorerPlugin
 
     [ckan.celery_task]
-    tasks = ckanext.webstorer.celery_import:task_imports
+    tasks = ckanext.datastorer.celery_import:task_imports
 	""",
 )

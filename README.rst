@@ -1,30 +1,20 @@
-CKAN Webstorer Extension
+CKAN Datastorer Extension
 =======================
 
-The CKAN Webstorer Extension provides a Celery task for automatically
- saving ckan resources that link to csv and excel files into the webstore.
+The CKAN Debstorer Extension provides a Celery task for automatically
+ saving ckan resources that link to csv and excel files into the datastore.
 
 
 Installation
 ------------
 
 Install the plugin using pip. Download the source, then
-from the ckanext-archiver directory, run
+from the ckanext-datastorer directory, run
 
 ::
 
     $ pip install -e ./
-
-Install Webstore located at https://github.com/okfn/ckanext-webstorer.
-
-Add the folowing to your ckan config file, altering the url to where your webstore is located::
-
-    ckan.webstore_url=http://0.0.0.0:5555
-
-Make sure your webstore configuration has the following changing the CKAN_DB_URI::
-
-    AUTH_FUNCTION = 'ckan'
-    CKAN_DB_URI = 'postgresql://ckantest:pass@localhost/ckan'
+    $ pip install -r requires.txt
 
 Start the celery deamon.  This can be done in development by::
 
@@ -40,18 +30,11 @@ Using this file as a template and add to /etc/supservisor/conf.d:
     https://github.com/okfn/ckan/blob/master/ckan/config/celery-supervisor.conf
 
 
-Configuration
--------------
-
-The only configuration that is is needed
-
-    ckan.webstore_url=http://0.0.0.0:5555
-
 
 Developers
 ----------
 
-You can run the test suite from the ckanext-webstorer directory.
+You can run the test suite from the ckanext-datastorer directory.
 The tests require nose, so install it first if you have not already
 done so:
 
@@ -63,4 +46,5 @@ Then, run nosetests from the ckanext-archiver directory
 
 ::
 
-   $ nosetests
+   $ nosetests tests
+

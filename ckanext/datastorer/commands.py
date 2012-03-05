@@ -16,7 +16,7 @@ class Webstorer(CkanCommand):
 
     Usage:
 
-        paster webstorer update 
+        paster datastorer update 
            - Archive all resources or just those belonging to a specific package 
              if a package id is provided
 
@@ -67,22 +67,22 @@ class Webstorer(CkanCommand):
                         resource['url'], package['name']))
 
                     task_id = make_uuid()
-                    webstorer_task_status = {
+                    datastorer_task_status = {
                         'entity_id': resource['id'],
                         'entity_type': u'resource',
-                        'task_type': u'webstorer',
+                        'task_type': u'datastorer',
                         'key': u'celery_task_id',
                         'value': task_id,
                         'last_updated': datetime.now().isoformat()
                     }
-                    webstorer_task_context = {
+                    datastorer_task_context = {
                         'model': model, 
                         'user': user.get('name')
                     }
 
-                    get_action('task_status_update')(webstorer_task_context, 
-                                                     webstorer_task_status)
-                    celery.send_task("webstorer.upload", 
+                    get_action('task_status_update')(datastorer_task_context, 
+                                                     datastorer_task_status)
+                    celery.send_task("datastorer.upload", 
                                      args=[context, data], 
                                      task_id=task_id)
         else:

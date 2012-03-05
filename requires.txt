@@ -1,0 +1,2 @@
+-e git+https://github.com/okfn/messytables.git#egg=messytables
+-e git+https://github.com/okfn/ckanext-archiver.git#egg=ckanext-archiver

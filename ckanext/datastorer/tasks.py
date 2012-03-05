@@ -28,7 +28,7 @@ def check_response_and_retry(response, webstore_request_url):
         if not response.status_code:
             raise WebstorerError('Webstore is not reponding at %s with response %s' % (webstore_request_url, response))
     except Exception, e:
-        webstorer_upload.retry(exc=e)
+        datastorer_upload.retry(exc=e)
 
 def guess_types(rows):
     ''' Simple guess types of fields, only allowed are int, float and string'''
@@ -65,25 +65,25 @@ def datetime_procesor():
     return datetime_convert
 
 
-@celery.task(name = "webstorer.upload", max_retries=24*7, default_retry_delay=3600)
-def webstorer_upload(context, data):
+@celery.task(name = "datastorer.upload", max_retries=24*7, default_retry_delay=3600)
+def datastorer_upload(context, data):
     try:
         data = json.loads(data)
         context = json.loads(context)
-        return _webstorer_upload(context, data)
+        return _datastorer_upload(context, data)
     except Exception, e:
         update_task_status(context, {
             'entity_id': data['id'],
             'entity_type': u'resource',
-            'task_type': 'webstorer',
+            'task_type': 'datastorer',
             'key': u'celery_task_id',
-            'value': unicode(webstorer_upload.request.id),
+            'value': unicode(datastorer_upload.request.id),
             'error': '%s: %s' % (e.__class__.__name__,  unicode(e)),
             'last_updated': datetime.datetime.now().isoformat()
         })
         raise
 
-def _webstorer_upload(context, resource):
+def _datastorer_upload(context, resource):
 
     excel_types = ['xls', 'application/ms-excel', 'application/xls', 'application/vnd.ms-excel']
 

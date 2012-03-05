@@ -12,7 +12,7 @@ from datetime import datetime
 class WebstorerPlugin(SingletonPlugin):
     """
     Registers to be notified whenever CKAN resources are created or their URLs change,
-    and will create a new ckanext.webstorer celery task to put the resource in the webstore.
+    and will create a new ckanext.datastorer celery task to put the resource in the webstore.
     """
     implements(IDomainObjectModification, inherit=True)
     implements(IResourceUrlChange)
@@ -23,13 +23,13 @@ class WebstorerPlugin(SingletonPlugin):
         
         if operation:
             if operation == model.DomainObjectOperation.new:
-                self._create_webstorer_task(entity)
+                self._create_datastorer_task(entity)
         else:
             # if operation is None, resource URL has been changed, as the
             # notify function in IResourceUrlChange only takes 1 parameter
-            self._create_webstorer_task(entity)
+            self._create_datastorer_task(entity)
 
-    def _create_webstorer_task(self, resource):
+    def _create_datastorer_task(self, resource):
         user = get_action('get_site_user')({'model': model,
                                             'ignore_auth': True,
                                             'defer_commit': True}, {})
@@ -43,10 +43,10 @@ class WebstorerPlugin(SingletonPlugin):
         data = json.dumps(resource_dictize(resource, {'model': model}))
 
         task_id = make_uuid()
-        webstorer_task_status = {
+        datastorer_task_status = {
             'entity_id': resource.id,
             'entity_type': u'resource',
-            'task_type': u'webstorer',
+            'task_type': u'datastorer',
             'key': u'celery_task_id',
             'value': task_id,
             'last_updated': datetime.now().isoformat()
@@ -56,6 +56,6 @@ class WebstorerPlugin(SingletonPlugin):
             'user': user.get('name'),
         }
         
-        get_action('task_status_update')(archiver_task_context, webstorer_task_status)
-        celery.send_task("webstorer.upload", args=[context, data], task_id=task_id)
+        get_action('task_status_update')(archiver_task_context, datastorer_task_status)
+        celery.send_task("datastorer.upload", args=[context, data], task_id=task_id)
 
