@@ -20,6 +20,8 @@ class WebstorerPlugin(SingletonPlugin):
 
     def configure(self, config):
         self.site_url = config.get('ckan.site_url')
+        assert self.site_url, 'must supply fully qualified site.url in config http://ckan.net'
+
 
     def notify(self, entity, operation=None):
         if not isinstance(entity, model.Resource):
