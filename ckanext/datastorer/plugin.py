@@ -8,6 +8,8 @@ import ckan.lib.helpers as h
 from ckan.lib.dictization.model_dictize import resource_dictize
 import json
 from datetime import datetime
+from logging import getLogger
+log = getLogger(__name__)
 
 class WebstorerPlugin(SingletonPlugin):
     """
@@ -35,7 +37,7 @@ class WebstorerPlugin(SingletonPlugin):
                                             'defer_commit': True}, {})
 
         context = json.dumps({
-            'site_url': h.url_for('/', qualified = True),
+            'site_url': h.url_for_static('/', qualified = True),
             'apikey': user.get('apikey'),
             'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),
