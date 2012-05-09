@@ -1,0 +1,4 @@
+python:Versions=2.6
+python:Provides=python2.6-ckanext-datastorer
+python:Depends=python-support (>= 0.90.0)
+misc:Depends=
