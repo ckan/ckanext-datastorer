@@ -21,7 +21,7 @@ setup(
 	zip_safe=False,
     install_requires = [
         'messytables>=0.2',
-        'celery>=2.4.2',
+        'celery==2.4.2',
         'kombu==2.1.3',
         'kombu-sqlalchemy==1.1.0',
         'ckanext-archiver>=0.0',
