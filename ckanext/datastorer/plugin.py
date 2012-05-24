@@ -22,9 +22,8 @@ class WebstorerPlugin(SingletonPlugin):
     def notify(self, entity, operation=None):
         if not isinstance(entity, model.Resource):
             return
-        
         if operation:
-            if operation == model.DomainObjectOperation.new:
+            if operation == model.domain_object.DomainObjectOperation.new:
                 self._create_datastorer_task(entity)
         else:
             # if operation is None, resource URL has been changed, as the
