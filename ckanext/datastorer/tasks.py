@@ -131,7 +131,7 @@ def _datastorer_upload(context, resource):
             data[:] = []
 
     if data:
-        respose = send_request(data)
+        response = send_request(data)
         check_response_and_retry(response, webstore_request_url+'_mapping')
 
 
@@ -139,7 +139,7 @@ def _datastorer_upload(context, resource):
 
     ckan_resource_data = {
         'id': resource["id"],
-        'webstore_url': webstore_request_url,
+        'webstore_url': 'active',
         'webstore_last_updated': datetime.datetime.now().isoformat()
     }
 

@@ -8,24 +8,28 @@ The CKAN Debstorer Extension provides a Celery task for automatically
 Installation
 ------------
 
-Install the plugin using pip. Download the source, then
-from the ckanext-datastorer directory, run
+After activating your pyenv, install the sources via pip::
 
-::
+    $ (pyenv) pip install -e git+git://github.com/okfn/ckanext-datastorer.git#egg=ckanext-datastorer
 
-    $ pip install -e ./
-    $ pip install -r requires.txt
+Install the requirements::
 
-Start the celery deamon.  This can be done in development by::
+    $ (pyenv) pip install -r ckanext-datastorer/requires.txt
+
+Add the datastorer plugin to your configuration ini file::
+
+    ckan.plugins = datastorer <rest of plugins>...
+
+Start the celery daemon.  This can be done in development by::
 
     paster celeryd # this is assuming a development.ini file
 
-In production the deamon should be run with a different ini file and be run as an init script.
-The simplist way to do this is to install supervisor::
+In production the daemon should be run with a different ini file and be run as an init script.
+The simpliest way to do this is to install supervisor::
 
-    apt-get insatll supervisor
+    apt-get install supervisor
 
-Using this file as a template and add to /etc/supservisor/conf.d:
+You can use this file as a template and add it to /etc/supservisor/conf.d:
 
     https://github.com/okfn/ckan/blob/master/ckan/config/celery-supervisor.conf
 

@@ -56,7 +56,6 @@ class WebstorerPlugin(SingletonPlugin):
             'model': model, 
             'user': user.get('name'),
         }
-        
         get_action('task_status_update')(archiver_task_context, datastorer_task_status)
         celery.send_task("datastorer.upload", args=[context, data], task_id=task_id)
 
