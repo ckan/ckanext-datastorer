@@ -46,9 +46,14 @@ done so:
 
    $ pip install nose
 
-Then, run nosetests from the ckanext-archiver directory
+To run the tests, you will need to be running a CKAN instance, and provide
+the API key of a sysadmin user on the tests configuration file located on::
+
+    ckanext/datastorer/tests/tests_config.cfg
+
+Then, run nosetests from the ckanext-datastorer directory
 
 ::
 
-   $ nosetests tests
+   $ nosetests ckanext/datastorer/tests
 
