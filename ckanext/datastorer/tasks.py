@@ -7,14 +7,16 @@ import requests
 import datetime
 import messytables
 
-DATA_FORMATS = [ 
+DATA_FORMATS = [
     'csv',
     'text/csv',
     'txt',
     'text/plain',
+    'text/tsv',
+    'text/tab-separated-values',
     'xls',
     'application/ms-excel',
-    'application/vnd.ms-excel',    
+    'application/vnd.ms-excel',
     'application/xls',
     'application/octet-stream',
     'text/comma-separated-values'
@@ -34,7 +36,7 @@ def guess_types(rows):
     ''' Simple guess types of fields, only allowed are int, float and string'''
 
     headers = rows[0].keys()
-    guessed_types = [] 
+    guessed_types = []
     for header in headers:
         data_types = set([int, float])
         for row in rows:
@@ -54,7 +56,7 @@ def guess_types(rows):
         else:
             guessed_types.append(messytables.StringType())
     return guessed_types
-                
+
 def datetime_procesor():
     def datetime_convert(row_set, row):
         for cell in row:
@@ -86,6 +88,7 @@ def datastorer_upload(context, data):
 def _datastorer_upload(context, resource):
 
     excel_types = ['xls', 'application/ms-excel', 'application/xls', 'application/vnd.ms-excel']
+    tsv_types = ['text/tsv', 'text/tab-separated-values']
 
     result = download(context, resource, data_formats=DATA_FORMATS)
     content_type = result['headers'].get('content-type', '')
@@ -94,7 +97,8 @@ def _datastorer_upload(context, resource):
     if content_type in excel_types or resource['format'] in excel_types:
         table_sets = XLSTableSet.from_fileobj(f)
     else:
-        table_sets = CSVTableSet.from_fileobj(f)
+        delimiter = '\t' if content_type in tsv_types else ','
+        table_sets = CSVTableSet.from_fileobj(f, delimiter=delimiter)
 
     ##only first sheet in xls for time being
     row_set = table_sets.tables[0]
@@ -109,7 +113,7 @@ def _datastorer_upload(context, resource):
 
 
     ckan_url = context['site_url'].rstrip('/')
-    
+
     webstore_request_url = '%s/api/data/%s/' % (ckan_url,
                                                 resource['id']
                                                 )
@@ -140,7 +144,8 @@ def _datastorer_upload(context, resource):
     ckan_resource_data = {
         'id': resource["id"],
         'webstore_url': 'active',
-        'webstore_last_updated': datetime.datetime.now().isoformat()
+        'webstore_last_updated': datetime.datetime.now().isoformat(),
+        'url': resource['url']
     }
 
     response = requests.post(

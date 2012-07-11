@@ -85,7 +85,6 @@ class TestUploadBasic(object):
              )
 
         response = json.loads(response.content)
-
         assert len(response['hits']['hits']) == 6, len(response['hits']['hits'])
 
 
