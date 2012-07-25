@@ -101,7 +101,10 @@ def _datastorer_upload(context, resource):
     tsv_types = ['text/tsv', 'text/tab-separated-values']
 
     result = download(context, resource, data_formats=DATA_FORMATS)
-    content_type = result['headers'].get('content-type', '')
+
+    content_type = result['headers'].get('content-type', '')\
+                                    .split(';', 1)[0]  # remove parameters
+
     f = open(result['saved_file'], 'rb')
 
     if content_type in excel_types or resource['format'] in excel_types:
