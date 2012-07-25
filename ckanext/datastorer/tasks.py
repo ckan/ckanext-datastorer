@@ -1,40 +1,48 @@
 import json
-from messytables import CSVTableSet, XLSTableSet, types_processor, headers_guess, headers_processor, \
-  offset_processor
+from messytables import (CSVTableSet, XLSTableSet, types_processor,
+                         headers_guess, headers_processor,
+                         offset_processor)
 from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
 import requests
 import datetime
 import messytables
 
-DATA_FORMATS = [ 
+DATA_FORMATS = [
     'csv',
     'text/csv',
     'txt',
     'text/plain',
+    'text/tsv',
+    'text/tab-separated-values',
     'xls',
     'application/ms-excel',
-    'application/vnd.ms-excel',    
+    'application/vnd.ms-excel',
     'application/xls',
     'application/octet-stream',
     'text/comma-separated-values'
 ]
 
+
 class WebstorerError(Exception):
     pass
+
 
 def check_response_and_retry(response, webstore_request_url):
     try:
         if not response.status_code:
-            raise WebstorerError('Webstore is not reponding at %s with response %s' % (webstore_request_url, response))
+            raise WebstorerError('Webstore is not reponding at %s with '
+                                 'response %s' % (webstore_request_url,
+                                                  response))
     except Exception, e:
         datastorer_upload.retry(exc=e)
+
 
 def guess_types(rows):
     ''' Simple guess types of fields, only allowed are int, float and string'''
 
     headers = rows[0].keys()
-    guessed_types = [] 
+    guessed_types = []
     for header in headers:
         data_types = set([int, float])
         for row in rows:
@@ -54,7 +62,8 @@ def guess_types(rows):
         else:
             guessed_types.append(messytables.StringType())
     return guessed_types
-                
+
+
 def datetime_procesor():
     def datetime_convert(row_set, row):
         for cell in row:
@@ -65,7 +74,8 @@ def datetime_procesor():
     return datetime_convert
 
 
-@celery.task(name = "datastorer.upload", max_retries=24*7, default_retry_delay=3600)
+@celery.task(name="datastorer.upload", max_retries=24 * 7,
+             default_retry_delay=3600)
 def datastorer_upload(context, data):
     try:
         data = json.loads(data)
@@ -83,18 +93,27 @@ def datastorer_upload(context, data):
         })
         raise
 
+
 def _datastorer_upload(context, resource):
 
-    excel_types = ['xls', 'application/ms-excel', 'application/xls', 'application/vnd.ms-excel']
+    excel_types = ['xls', 'application/ms-excel', 'application/xls',
+                   'application/vnd.ms-excel']
+    tsv_types = ['tsv', 'text/tsv', 'text/tab-separated-values']
 
     result = download(context, resource, data_formats=DATA_FORMATS)
-    content_type = result['headers'].get('content-type', '')
+
+    content_type = result['headers'].get('content-type', '')\
+                                    .split(';', 1)[0]  # remove parameters
+
     f = open(result['saved_file'], 'rb')
 
     if content_type in excel_types or resource['format'] in excel_types:
         table_sets = XLSTableSet.from_fileobj(f)
     else:
-        table_sets = CSVTableSet.from_fileobj(f)
+        is_tsv = (content_type in tsv_types or
+                  resource['format'] in tsv_types)
+        delimiter = '\t' if is_tsv else ','
+        table_sets = CSVTableSet.from_fileobj(f, delimiter=delimiter)
 
     ##only first sheet in xls for time being
     row_set = table_sets.tables[0]
@@ -107,51 +126,48 @@ def _datastorer_upload(context, resource):
     row_set.register_processor(offset_processor(offset + 1))
     row_set.register_processor(types_processor(types))
 
-
     ckan_url = context['site_url'].rstrip('/')
-    
+
     webstore_request_url = '%s/api/data/%s/' % (ckan_url,
                                                 resource['id']
                                                 )
 
     def send_request(data):
         return requests.post(webstore_request_url + '_bulk',
-                             data = "%s%s" % ("\n".join(data), "\n"),
-                             headers = {'Content-Type': 'application/json',
-                                        'Authorization': context['apikey']},
+                             data="%s%s" % ("\n".join(data), "\n"),
+                             headers={'Content-Type': 'application/json',
+                                      'Authorization': context['apikey']},
                              )
 
     data = []
-    for count,dict_ in enumerate(row_set.dicts()):
-        data.append(json.dumps({"index": {"_id": count+1}}))
+    for count, dict_ in enumerate(row_set.dicts()):
+        data.append(json.dumps({"index": {"_id": count + 1}}))
         data.append(json.dumps(dict_))
         if (count % 100) == 0:
             response = send_request(data)
-            check_response_and_retry(response, webstore_request_url+'_mapping')
+            check_response_and_retry(response, webstore_request_url +
+                                     '_mapping')
             data[:] = []
 
     if data:
         response = send_request(data)
-        check_response_and_retry(response, webstore_request_url+'_mapping')
+        check_response_and_retry(response, webstore_request_url + '_mapping')
 
-
-    ckan_request_url =  ckan_url + '/api/action/resource_update'
+    ckan_request_url = ckan_url + '/api/action/resource_update'
 
     ckan_resource_data = {
         'id': resource["id"],
         'webstore_url': 'active',
-        'webstore_last_updated': datetime.datetime.now().isoformat()
+        'webstore_last_updated': datetime.datetime.now().isoformat(),
+        'url': resource['url']
     }
 
     response = requests.post(
         ckan_request_url,
         data=json.dumps(ckan_resource_data),
-        headers = {'Content-Type': 'application/json',
-                   'Authorization': context['apikey']},
-        )
+        headers={'Content-Type': 'application/json',
+                 'Authorization': context['apikey']})
 
     if response.status_code not in (201, 200):
-        raise WebstorerError('Ckan bad response code (%s). Response was %s'%
-                             (response.status_code, response.content)
-                            )
-
+        raise WebstorerError('Ckan bad response code (%s). Response was %s' %
+                             (response.status_code, response.content))

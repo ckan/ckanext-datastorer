@@ -1,7 +1,8 @@
 from ckan import model
 from ckan.model.types import make_uuid
-from ckan.plugins import SingletonPlugin, implements, IDomainObjectModification, \
-    IResourceUrlChange, IConfigurable
+from ckan.plugins import (SingletonPlugin, implements,
+                          IDomainObjectModification,
+                          IResourceUrlChange, IConfigurable)
 from ckan.logic import get_action
 from ckan.lib.celery_app import celery
 import ckan.lib.helpers as h
@@ -11,10 +12,12 @@ from datetime import datetime
 from logging import getLogger
 log = getLogger(__name__)
 
+
 class WebstorerPlugin(SingletonPlugin):
     """
-    Registers to be notified whenever CKAN resources are created or their URLs change,
-    and will create a new ckanext.datastorer celery task to put the resource in the webstore.
+    Registers to be notified whenever CKAN resources are created or their
+    URLs change, and will create a new ckanext.datastorer celery task to
+    put the resource in the webstore.
     """
     implements(IDomainObjectModification, inherit=True)
     implements(IResourceUrlChange)
@@ -36,7 +39,7 @@ class WebstorerPlugin(SingletonPlugin):
                                             'defer_commit': True}, {})
 
         context = json.dumps({
-            'site_url': h.url_for_static('/', qualified = True),
+            'site_url': h.url_for_static('/', qualified=True),
             'apikey': user.get('apikey'),
             'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),
@@ -53,9 +56,11 @@ class WebstorerPlugin(SingletonPlugin):
             'last_updated': datetime.now().isoformat()
         }
         archiver_task_context = {
-            'model': model, 
+            'model': model,
             'user': user.get('name'),
         }
-        get_action('task_status_update')(archiver_task_context, datastorer_task_status)
-        celery.send_task("datastorer.upload", args=[context, data], task_id=task_id)
-
+        get_action('task_status_update')(archiver_task_context,
+                                         datastorer_task_status)
+        celery.send_task("datastorer.upload",
+                         args=[context, data],
+                         task_id=task_id)
