@@ -98,7 +98,7 @@ def _datastorer_upload(context, resource):
 
     excel_types = ['xls', 'application/ms-excel', 'application/xls',
                    'application/vnd.ms-excel']
-    tsv_types = ['text/tsv', 'text/tab-separated-values']
+    tsv_types = ['tsv', 'text/tsv', 'text/tab-separated-values']
 
     result = download(context, resource, data_formats=DATA_FORMATS)
 
@@ -110,7 +110,9 @@ def _datastorer_upload(context, resource):
     if content_type in excel_types or resource['format'] in excel_types:
         table_sets = XLSTableSet.from_fileobj(f)
     else:
-        delimiter = '\t' if content_type in tsv_types else ','
+        is_tsv = (content_type in tsv_types or
+                  resource['format'] in tsv_types)
+        delimiter = '\t' if is_tsv else ','
         table_sets = CSVTableSet.from_fileobj(f, delimiter=delimiter)
 
     ##only first sheet in xls for time being

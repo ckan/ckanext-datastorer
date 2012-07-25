@@ -118,6 +118,42 @@ class TestUploadBasic(object):
         assert len(response['hits']['hits'][0]['_source'].keys()) == 3
 
 
+    def test_tsv_file_with_incorrect_mimetype(self):
+        '''Not all servers are well-behaved, and provide the wrong mime type.
+
+        Force the test server to provide the wrong Content-Type by changing
+        the filename to have a .txt extension.  However, the owner of the
+        resource knows it's a tsv file, and can set the format directly.
+        '''
+
+        data = {'url': 'http://0.0.0.0:50001/static/tsv_as_txt.txt',
+                'format': 'tsv',
+                'id': 'uuid4'}
+
+        context = {'site_url': 'http://%s' % self.host,
+                   'site_user_apikey': self.api_key,
+                   'apikey': self.api_key
+                  }
+
+        resource_id = self.make_resource_id()
+        data['id'] = resource_id
+
+        tasks.datastorer_upload(json.dumps(context), json.dumps(data))
+
+        import time; time.sleep(1.0)
+
+        response = requests.get(
+            'http://%s/api/data/%s/_search?q=*' % (self.host,resource_id),
+             )
+
+        response = json.loads(response.content)
+        assert len(response['hits']['hits']) == 6, len(response['hits']['hits'])
+
+        # Check the number of fields to enusre the lines have been split
+        # correctly
+        assert len(response['hits']['hits'][0]['_source'].keys()) == 3
+
+
     def test_excel_file(self):
 
         data = {'url': 'http://0.0.0.0:50001/static/simple.xls',
