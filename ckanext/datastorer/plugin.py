@@ -18,6 +18,10 @@ class WebstorerPlugin(SingletonPlugin):
     """
     implements(IDomainObjectModification, inherit=True)
     implements(IResourceUrlChange)
+    implements(IConfigurable)
+
+    def configure(self, config):
+        self.site_url = config.get('ckan.site_url')
 
     def notify(self, entity, operation=None):
         if not isinstance(entity, model.Resource):
@@ -35,8 +39,10 @@ class WebstorerPlugin(SingletonPlugin):
                                             'ignore_auth': True,
                                             'defer_commit': True}, {})
 
+        site_url = self.site_url or h.url_for_static('/', qualified = True)
+
         context = json.dumps({
-            'site_url': h.url_for_static('/', qualified = True),
+            'site_url': site_url,
             'apikey': user.get('apikey'),
             'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),
