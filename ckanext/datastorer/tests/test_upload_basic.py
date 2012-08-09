@@ -17,12 +17,12 @@ class TestUploadBasic(object):
 
         # get config options
         config = ConfigParser.RawConfigParser({
-            'proxy_host': '0.0.0.0',
+            'ckan_host': '0.0.0.0',
         })
         config.read(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  'tests_config.cfg'))
 
-        cls.host = config.get('tests', 'proxy_host')
+        cls.host = config.get('tests', 'ckan_host')
         cls.api_key = config.get('tests', 'user_api_key')
 
         if not cls.api_key:
@@ -76,15 +76,19 @@ class TestUploadBasic(object):
 
         tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
-        import time
-        time.sleep(0.5)
-
         response = requests.get(
-            'http://%s/api/data/%s/_search?q=*' % (self.host, resource_id),
-        )
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type":"application/json"})
 
-        response = json.loads(response.content)
-        assert_equal(len(response['hits']['hits']), 6)
+        result = json.loads(response.content) 
+
+        assert result['result']['total'] == 6, result['total']
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'timestamp', u'id': u'date'},
+                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'text', u'id': u'place'}] , result['fields']
+
+
 
     def test_tsv_file(self):
 
@@ -101,18 +105,16 @@ class TestUploadBasic(object):
 
         tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
-        import time
-        time.sleep(1.0)
-
         response = requests.get(
-            'http://%s/api/data/%s/_search?q=*' % (self.host, resource_id))
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type":"application/json"})
 
-        response = json.loads(response.content)
-        assert_equal(len(response['hits']['hits']), 6)
-
-        # Check the number of fields to enusre the lines have been split
-        # correctly
-        assert len(response['hits']['hits'][0]['_source'].keys()) == 3
+        result = json.loads(response.content)
+        assert result['result']['total'] == 6, result['total']
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'timestamp', u'id': u'date'},
+                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'text', u'id': u'place'}] , result['fields']
 
     def test_tsv_file_with_incorrect_mimetype(self):
         '''Not all servers are well-behaved, and provide the wrong mime type.
@@ -135,18 +137,16 @@ class TestUploadBasic(object):
 
         tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
-        import time
-        time.sleep(1.0)
-
         response = requests.get(
-            'http://%s/api/data/%s/_search?q=*' % (self.host, resource_id))
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type":"application/json"})
 
-        response = json.loads(response.content)
-        assert_equal(len(response['hits']['hits']), 6)
-
-        # Check the number of fields to enusre the lines have been split
-        # correctly
-        assert len(response['hits']['hits'][0]['_source'].keys()) == 3
+        result = json.loads(response.content)
+        assert result['result']['total'] == 6, result['total']
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'timestamp', u'id': u'date'},
+                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'text', u'id': u'place'}] , result['fields']
 
     def test_excel_file(self):
 
@@ -162,15 +162,16 @@ class TestUploadBasic(object):
 
         tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
-        import time
-        time.sleep(0.5)
-
         response = requests.get(
-            'http://%s/api/data/%s/_search?q=*' % (self.host, resource_id))
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type":"application/json"})
 
-        response = json.loads(response.content)
-
-        assert_equal(len(response['hits']['hits']), 6)
+        result = json.loads(response.content)
+        assert result['result']['total'] == 6, result['total']
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'timestamp', u'id': u'date'},
+                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'text', u'id': u'place'}] , result['fields']
 
     def test_messier_file(self):
 
@@ -189,11 +190,21 @@ class TestUploadBasic(object):
         tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
         response = requests.get(
-            'http://%s/api/data/%s/_search?q=*' % (self.host, resource_id))
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type":"application/json"})
 
-        response = json.loads(response.content)
+        result = json.loads(response.content)
+        
+        assert result['result']['total'] == 564, result['result']['total']
+        assert len(result['result']['records']) == 100
 
-        assert_equal(len(response['hits']['hits']), 10)
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'text', u'id': u'Body Name'},
+                                              {u'type': u'timestamp', u'id': u'Date'},
+                                              {u'type': u'int4', u'id': u'Transaction Number'},
+                                              {u'type': u'float8', u'id': u'Amount'},
+                                              {u'type': u'text', u'id': u'Supplier'},
+                                              {u'type': u'text', u'id': u'Expense Area'}] , result['result']['fields']
 
     def test_error_bad_url(self):
 

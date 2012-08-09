@@ -128,25 +128,25 @@ def _datastorer_upload(context, resource):
 
     ckan_url = context['site_url'].rstrip('/')
 
-    webstore_request_url = '%s/api/data/%s/' % (ckan_url,
-                                                resource['id']
-                                                )
+    webstore_request_url = '%s/api/action/datastore_create' % (ckan_url)
 
     def send_request(data):
-        return requests.post(webstore_request_url + '_bulk',
-                             data="%s%s" % ("\n".join(data), "\n"),
+        request = {'resource_id': resource['id'],
+                   'fields': [dict(id=name) for name in headers],
+                   'records': data}
+
+        return requests.post(webstore_request_url,
+                             data=json.dumps(request),
                              headers={'Content-Type': 'application/json',
                                       'Authorization': context['apikey']},
                              )
 
     data = []
     for count, dict_ in enumerate(row_set.dicts()):
-        data.append(json.dumps({"index": {"_id": count + 1}}))
-        data.append(json.dumps(dict_))
+        data.append(dict(dict_))
         if (count % 100) == 0:
             response = send_request(data)
-            check_response_and_retry(response, webstore_request_url +
-                                     '_mapping')
+            check_response_and_retry(response, webstore_request_url)
             data[:] = []
 
     if data:
