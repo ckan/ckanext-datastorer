@@ -14,7 +14,7 @@ After activating your pyenv, install the sources via pip::
 
 Install the requirements::
 
-    $ (pyenv) pip install -r ckanext-datastorer/requires.txt
+    $ (pyenv) pip install -r ckanext-datastorer/pip-requirements.txt
 
 Add the datastorer plugin to your configuration ini file::
 
