@@ -9,10 +9,6 @@ import datetime
 import messytables
 import logging
 
-logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger('migrate')
-logger.setLevel(logging.INFO)
-
 DATA_FORMATS = [
     'csv',
     'text/csv',
