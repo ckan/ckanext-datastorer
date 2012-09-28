@@ -57,7 +57,7 @@ class TestUploadBasic(object):
                 {'name': str(uuid.uuid4()),
                  'resources': [{u'url': u'test'}]}
             ),
-            headers={'Authorization': self.api_key}
+            headers={'Authorization': self.api_key, 'content-type': 'application/json'}
         )
         return json.loads(response.content)['result']['resources'][0]['id']
 
@@ -86,7 +86,7 @@ class TestUploadBasic(object):
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
                                               {u'type': u'int4', u'id': u'temperature'},
-                                              {u'type': u'text', u'id': u'place'}] , result['fields']
+                                              {u'type': u'text', u'id': u'place'}], result['fields']
 
 
 
@@ -171,7 +171,7 @@ class TestUploadBasic(object):
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
                                               {u'type': u'int4', u'id': u'temperature'},
-                                              {u'type': u'text', u'id': u'place'}] , result['fields']
+                                              {u'type': u'text', u'id': u'place'}], result['fields']
 
     def test_messier_file(self):
 
@@ -191,10 +191,11 @@ class TestUploadBasic(object):
 
         response = requests.get(
             'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
-             headers={"content-type":"application/json"})
+             headers={"content-type": "application/json"})
 
         result = json.loads(response.content)
-        
+
+        # TODO: this fails
         assert result['result']['total'] == 564, result['result']['total']
         assert len(result['result']['records']) == 100
 
@@ -204,7 +205,7 @@ class TestUploadBasic(object):
                                               {u'type': u'int4', u'id': u'Transaction Number'},
                                               {u'type': u'float8', u'id': u'Amount'},
                                               {u'type': u'text', u'id': u'Supplier'},
-                                              {u'type': u'text', u'id': u'Expense Area'}] , result['result']['fields']
+                                              {u'type': u'text', u'id': u'Expense Area'}], result['result']['fields']
 
     def test_error_bad_url(self):
 
