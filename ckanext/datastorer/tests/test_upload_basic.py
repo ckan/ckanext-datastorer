@@ -82,7 +82,7 @@ class TestUploadBasic(object):
 
         result = json.loads(response.content)
 
-        assert result['result']['total'] == 6, result['result']['total']
+        assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
                                               {u'type': u'int4', u'id': u'temperature'},
@@ -108,7 +108,7 @@ class TestUploadBasic(object):
              headers={"content-type": "application/json"})
 
         result = json.loads(response.content)
-        assert result['result']['total'] == 6, result['total']
+        assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
                                               {u'type': u'int4', u'id': u'temperature'},
@@ -140,7 +140,7 @@ class TestUploadBasic(object):
              headers={"content-type": "application/json"})
 
         result = json.loads(response.content)
-        assert result['result']['total'] == 6, result['total']
+        assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
                                               {u'type': u'int4', u'id': u'temperature'},
@@ -165,11 +165,11 @@ class TestUploadBasic(object):
              headers={"content-type": "application/json"})
 
         result = json.loads(response.content)
-        assert result['result']['total'] == 6, result['result']['total']
+        assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
-                                              {u'type': u'int4', u'id': u'temperature'},
-                                              {u'type': u'text', u'id': u'place'}], result['fields']
+                                              {u'type': u'numeric', u'id': u'temperature'},
+                                              {u'type': u'text', u'id': u'place'}], result['result']['fields']
 
     def test_messier_file(self):
 
@@ -193,7 +193,7 @@ class TestUploadBasic(object):
 
         result = json.loads(response.content)
 
-        assert result['result']['total'] == 564, result['result']['total']
+        assert result['result']['total'] == 564, (result['result']['total'], resource_id)
         assert len(result['result']['records']) == 100
 
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
