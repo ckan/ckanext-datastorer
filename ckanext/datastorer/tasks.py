@@ -1,12 +1,11 @@
 import json
 from messytables import (CSVTableSet, XLSTableSet, types_processor,
-                         headers_guess, headers_processor,
+                         headers_guess, headers_processor, type_guess,
                          offset_processor)
 from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
 import requests
 import datetime
-import dateutil.parser as parser
 import messytables
 
 from logging import getLogger
@@ -42,30 +41,13 @@ def check_response_and_retry(response, webstore_request_url):
         datastorer_upload.retry(exc=e)
 
 
-def guess_types(rows):
-    ''' Simple guess types of fields, only allowed are int, float and string'''
-
-    headers = rows[0].keys()
-    guessed_types = []
-    for header in headers:
-        data_types = set([int, float])
-        for row in rows:
-            if not row.get(header):
-                continue
-            for data_type in list(data_types):
-                try:
-                    data_type(row[header])
-                except (TypeError, ValueError):
-                    data_types.discard(data_type)
-            if not data_types:
-                break
-        if int in data_types:
-            guessed_types.append(messytables.IntegerType())
-        elif float in data_types:
-            guessed_types.append(messytables.FloatType())
-        else:
-            guessed_types.append(messytables.StringType())
-    return guessed_types
+def stringify_processor():
+    def to_string(row_set, row):
+        for cell in row:
+            cell.value = unicode(cell.value)
+            cell.type = messytables.StringType()
+        return row
+    return to_string
 
 
 def datetime_procesor():
@@ -124,11 +106,12 @@ def _datastorer_upload(context, resource):
     offset, headers = headers_guess(row_set.sample)
     row_set.register_processor(headers_processor(headers))
     row_set.register_processor(offset_processor(offset + 1))
-    row_set.register_processor(datetime_procesor())
+    #row_set.register_processor(datetime_procesor())
 
-    types = guess_types(list(row_set.dicts(sample=True)))
+    guessed_types = type_guess(row_set)
     row_set.register_processor(offset_processor(offset + 1))
-    row_set.register_processor(types_processor(types))
+    row_set.register_processor(types_processor(guessed_types))
+    row_set.register_processor(stringify_processor())
 
     ckan_url = context['site_url'].rstrip('/')
 

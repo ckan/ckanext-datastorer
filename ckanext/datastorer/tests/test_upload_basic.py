@@ -193,7 +193,6 @@ class TestUploadBasic(object):
 
         result = json.loads(response.content)
 
-        # TODO: this fails
         assert result['result']['total'] == 564, result['result']['total']
         assert len(result['result']['records']) == 100
 
@@ -201,7 +200,7 @@ class TestUploadBasic(object):
                                               {u'type': u'text', u'id': u'Body Name'},
                                               {u'type': u'timestamp', u'id': u'Date'},
                                               {u'type': u'int4', u'id': u'Transaction Number'},
-                                              {u'type': u'float8', u'id': u'Amount'},
+                                              {u'type': u'numeric', u'id': u'Amount'},
                                               {u'type': u'text', u'id': u'Supplier'},
                                               {u'type': u'text', u'id': u'Expense Area'}], result['result']['fields']
 
