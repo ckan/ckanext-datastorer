@@ -6,10 +6,11 @@ from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
 import requests
 import datetime
+import dateutil.parser as parser
 import messytables
 
 from logging import getLogger
-log = getLogger(__name__)
+logger = getLogger(__name__)
 
 DATA_FORMATS = [
     'csv',
@@ -93,7 +94,7 @@ def datastorer_upload(context, data):
             'value': unicode(datastorer_upload.request.id),
             'error': '%s: %s' % (e.__class__.__name__,  unicode(e)),
             'last_updated': datetime.datetime.now().isoformat()
-        }, log)
+        }, logger)
         raise
 
 
