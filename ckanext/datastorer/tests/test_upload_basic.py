@@ -37,8 +37,8 @@ class TestUploadBasic(object):
         #make sure services are running
         for i in range(0, 50):
             time.sleep(0.1)
-            response1 = requests.get('http://0.0.0.0:50001')
-            if not response1:
+            response = requests.get('http://0.0.0.0:50001')
+            if not response:
                 continue
             return
 
@@ -107,7 +107,7 @@ class TestUploadBasic(object):
 
         response = requests.get(
             'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
-             headers={"content-type":"application/json"})
+             headers={"content-type": "application/json"})
 
         result = json.loads(response.content)
         assert result['result']['total'] == 6, result['total']
@@ -139,14 +139,14 @@ class TestUploadBasic(object):
 
         response = requests.get(
             'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
-             headers={"content-type":"application/json"})
+             headers={"content-type": "application/json"})
 
         result = json.loads(response.content)
         assert result['result']['total'] == 6, result['total']
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
                                               {u'type': u'int4', u'id': u'temperature'},
-                                              {u'type': u'text', u'id': u'place'}] , result['fields']
+                                              {u'type': u'text', u'id': u'place'}], result['fields']
 
     def test_excel_file(self):
 
@@ -164,10 +164,10 @@ class TestUploadBasic(object):
 
         response = requests.get(
             'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
-             headers={"content-type":"application/json"})
+             headers={"content-type": "application/json"})
 
         result = json.loads(response.content)
-        assert result['result']['total'] == 6, result['total']
+        assert result['result']['total'] == 6, result['result']['total']
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
                                               {u'type': u'int4', u'id': u'temperature'},
