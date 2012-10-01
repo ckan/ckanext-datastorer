@@ -7,7 +7,9 @@ from ckan.lib.celery_app import celery
 import requests
 import datetime
 import messytables
-import logging
+
+from logging import getLogger
+log = getLogger(__name__)
 
 DATA_FORMATS = [
     'csv',
@@ -91,7 +93,7 @@ def datastorer_upload(context, data):
             'value': unicode(datastorer_upload.request.id),
             'error': '%s: %s' % (e.__class__.__name__,  unicode(e)),
             'last_updated': datetime.datetime.now().isoformat()
-        }, logger)
+        }, log)
         raise
 
 
