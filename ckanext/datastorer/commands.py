@@ -13,7 +13,7 @@ logger = logging.getLogger()
 
 class Webstorer(CkanCommand):
     """
-    Upload all available resources to the webstore
+    Upload all available resources to the webstore if they are not already in the datastore.
 
     Usage:
 
@@ -65,7 +65,8 @@ class Webstorer(CkanCommand):
                 for resource in package.get('resources', []):
                     data = json.dumps(resource, {'model': model})
 
-                    if resource['webstore_url']:
+                    # skip update if the datastore is already active (a table exists)
+                    if resource['datastore_active']:
                         continue
                     mimetype = resource['mimetype']
                     if mimetype and (mimetype not in tasks.DATA_FORMATS
@@ -73,7 +74,7 @@ class Webstorer(CkanCommand):
                                      tasks.DATA_FORMATS):
                         continue
 
-                    logger.info('Webstoring resource from resource %s from '
+                    logger.info('Datastore resource from resource %s from '
                                 'package %s' % (resource['url'],
                                                 package['name']))
 
