@@ -57,9 +57,10 @@ the API key of a sysadmin user on the tests configuration file located on::
 
     ckanext/datastorer/tests/tests_config.cfg
 
+.. note:: Make sure that celery is not running during the tests. Otherwise strange errors will occur!
+
 Then, run nosetests from the ckanext-datastorer directory
 
 ::
 
    $ nosetests ckanext/datastorer/tests
-

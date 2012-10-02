@@ -24,6 +24,7 @@ class TestUploadBasic(object):
 
         cls.host = config.get('tests', 'ckan_host')
         cls.api_key = config.get('tests', 'user_api_key')
+        cls.resource_ids = []
 
         if not cls.api_key:
             raise Exception('You must add a sysadmin API key to the tests '
@@ -49,6 +50,21 @@ class TestUploadBasic(object):
     def teardown_class(cls):
         cls.static_files_server.kill()
 
+    def teardown(self):
+        self.clean_up()
+
+    def clean_up(self):
+        while self.resource_ids:
+            res_id = self.resource_ids.pop()
+            request = {'resource_id': res_id}
+            r = requests.post('http://%s/api/action/datastore_delete' % self.host,
+                         data=json.dumps(request),
+                         headers={'Content-Type': 'application/json',
+                                  'Authorization': self.api_key},
+                         )
+            if r.status_code != 200:
+                print r.text
+
     def make_resource_id(self):
 
         response = requests.post(
@@ -59,7 +75,11 @@ class TestUploadBasic(object):
             ),
             headers={'Authorization': self.api_key, 'content-type': 'application/json'}
         )
-        return json.loads(response.content)['result']['resources'][0]['id']
+        res_id = json.loads(response.content)['result']['resources'][0]['id']
+
+        self.resource_ids.append(res_id)
+
+        return res_id
 
     def test_csv_file(self):
 
