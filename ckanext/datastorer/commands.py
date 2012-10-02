@@ -17,7 +17,7 @@ class Webstorer(CkanCommand):
 
     Usage:
 
-        paster datastorer update
+        paster datastorer update [package-id]
            - Archive all resources or just those belonging to a specific
              package if a package id is provided
 
@@ -51,9 +51,12 @@ class Webstorer(CkanCommand):
         api_url = urlparse.urljoin(config['ckan.site_url'], 'api/action')
 
         if cmd == 'update':
+            headers = {
+                'content-type:': 'application/json'
+            }
             response = requests.post(api_url +
                                      '/current_package_list_with_resources',
-                                     "{}")
+                                     "{}", headers=headers)
             packages = json.loads(response.content).get('result')
 
             for package in packages:
