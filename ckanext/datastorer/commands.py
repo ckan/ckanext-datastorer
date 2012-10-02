@@ -48,6 +48,8 @@ class Webstorer(CkanCommand):
             'username': user.get('name'),
             'webstore_url': config.get('ckan.webstore_url')
         })
+        if not config['ckan.site_url']:
+            raise Exception('You have to set the "ckan.site_url" property in your ini file.')
         api_url = urlparse.urljoin(config['ckan.site_url'], 'api/action')
 
         if cmd == 'update':
