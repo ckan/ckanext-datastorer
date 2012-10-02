@@ -27,15 +27,15 @@ DATA_FORMATS = [
 ]
 
 
-class WebstorerError(Exception):
+class DatastoreError(Exception):
     pass
 
 
-def check_response_and_retry(response, webstore_request_url):
+def check_response_and_retry(response, datastore_request_url):
     try:
         if not response.status_code:
-            raise WebstorerError('Webstore is not reponding at %s with '
-                                 'response %s' % (webstore_request_url,
+            raise DatastoreError('Datastore is not reponding at %s with '
+                                 'response %s' % (datastore_request_url,
                                                   response))
     except Exception, e:
         datastorer_upload.retry(exc=e)
@@ -115,14 +115,14 @@ def _datastorer_upload(context, resource):
 
     ckan_url = context['site_url'].rstrip('/')
 
-    webstore_request_url = '%s/api/action/datastore_create' % (ckan_url)
+    datastore_request_url = '%s/api/action/datastore_create' % (ckan_url)
 
     def send_request(data):
         request = {'resource_id': resource['id'],
                    'fields': [dict(id=name) for name in headers],
                    'records': data}
 
-        return requests.post(webstore_request_url,
+        return requests.post(datastore_request_url,
                              data=json.dumps(request),
                              headers={'Content-Type': 'application/json',
                                       'Authorization': context['apikey']},
@@ -133,12 +133,12 @@ def _datastorer_upload(context, resource):
         data.append(dict(dict_))
         if (count % 100) == 0:
             response = send_request(data)
-            check_response_and_retry(response, webstore_request_url)
+            check_response_and_retry(response, datastore_request_url)
             data[:] = []
 
     if data:
         response = send_request(data)
-        check_response_and_retry(response, webstore_request_url + '_mapping')
+        check_response_and_retry(response, datastore_request_url + '_mapping')
 
     ckan_request_url = ckan_url + '/api/action/resource_update'
 
@@ -156,5 +156,5 @@ def _datastorer_upload(context, resource):
                  'Authorization': context['apikey']})
 
     if response.status_code not in (201, 200):
-        raise WebstorerError('Ckan bad response code (%s). Response was %s' %
+        raise DatastoreError('Ckan bad response code (%s). Response was %s' %
                              (response.status_code, response.content))
