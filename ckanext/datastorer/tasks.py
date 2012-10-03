@@ -106,9 +106,9 @@ def _datastorer_upload(context, resource):
     offset, headers = headers_guess(row_set.sample)
     row_set.register_processor(headers_processor(headers))
     row_set.register_processor(offset_processor(offset + 1))
-    #row_set.register_processor(datetime_procesor())
+    row_set.register_processor(datetime_procesor())
 
-    guessed_types = type_guess(row_set)
+    guessed_types = type_guess(row_set, strict=True)
     row_set.register_processor(offset_processor(offset + 1))
     row_set.register_processor(types_processor(guessed_types))
     row_set.register_processor(stringify_processor())

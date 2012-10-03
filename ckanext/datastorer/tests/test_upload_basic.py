@@ -188,7 +188,7 @@ class TestUploadBasic(object):
         assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
-                                              {u'type': u'numeric', u'id': u'temperature'},
+                                              {u'type': u'int4', u'id': u'temperature'},
                                               {u'type': u'text', u'id': u'place'}], result['result']['fields']
 
     def test_messier_file(self):
