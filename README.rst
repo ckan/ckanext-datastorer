@@ -1,8 +1,8 @@
 CKAN Datastorer Extension
 =======================
 
-The CKAN Debstorer Extension provides a Celery task for automatically
- saving ckan resources that link to csv and excel files into the datastore.
+The CKAN Datastorer Extension provides a Celery task for automatically
+ saving CKAN resources that link to csv and excel files into the datastore.
 
 
 Installation
@@ -25,7 +25,7 @@ Start the celery daemon.  This can be done in development by::
     paster celeryd # this is assuming a development.ini file
 
 In production the daemon should be run with a different ini file and be run as an init script.
-The simpliest way to do this is to install supervisor::
+The simplest way to do this is to install supervisor::
 
     apt-get install supervisor
 
@@ -33,6 +33,12 @@ You can use this file as a template and add it to /etc/supservisor/conf.d:
 
     https://github.com/okfn/ckan/blob/master/ckan/config/celery-supervisor.conf
 
+Paster Command
+--------------
+
+A paster command is available, that lets you archive all resources or just those belonging to a specific package. The command is as follows::
+
+	paster datastorer update [package-id]
 
 
 Developers
@@ -51,9 +57,10 @@ the API key of a sysadmin user on the tests configuration file located on::
 
     ckanext/datastorer/tests/tests_config.cfg
 
+**Note:** Make sure that celery is not running during the tests. Otherwise strange errors will occur!
+
 Then, run nosetests from the ckanext-datastorer directory
 
 ::
 
    $ nosetests ckanext/datastorer/tests
-

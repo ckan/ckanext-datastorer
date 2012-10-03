@@ -13,11 +13,11 @@ logger = logging.getLogger()
 
 class Webstorer(CkanCommand):
     """
-    Upload all available resources to the webstore
+    Upload all available resources to the webstore if they are not already in the datastore.
 
     Usage:
 
-        paster datastorer update
+        paster datastorer update [package-id]
            - Archive all resources or just those belonging to a specific
              package if a package id is provided
 
@@ -48,19 +48,25 @@ class Webstorer(CkanCommand):
             'username': user.get('name'),
             'webstore_url': config.get('ckan.webstore_url')
         })
+        if not config['ckan.site_url']:
+            raise Exception('You have to set the "ckan.site_url" property in your ini file.')
         api_url = urlparse.urljoin(config['ckan.site_url'], 'api/action')
 
         if cmd == 'update':
+            headers = {
+                'content-type:': 'application/json'
+            }
             response = requests.post(api_url +
                                      '/current_package_list_with_resources',
-                                     "{}")
+                                     "{}", headers=headers)
             packages = json.loads(response.content).get('result')
 
             for package in packages:
                 for resource in package.get('resources', []):
                     data = json.dumps(resource, {'model': model})
 
-                    if resource['webstore_url']:
+                    # skip update if the datastore is already active (a table exists)
+                    if resource['datastore_active']:
                         continue
                     mimetype = resource['mimetype']
                     if mimetype and (mimetype not in tasks.DATA_FORMATS
@@ -68,7 +74,7 @@ class Webstorer(CkanCommand):
                                      tasks.DATA_FORMATS):
                         continue
 
-                    logger.info('Webstoring resource from resource %s from '
+                    logger.info('Datastore resource from resource %s from '
                                 'package %s' % (resource['url'],
                                                 package['name']))
 
