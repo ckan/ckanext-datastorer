@@ -66,7 +66,7 @@ class Webstorer(CkanCommand):
                     data = json.dumps(resource, {'model': model})
 
                     # skip update if the datastore is already active (a table exists)
-                    if resource['datastore_active']:
+                    if resource.get('datastore_active'):
                         continue
                     mimetype = resource['mimetype']
                     if mimetype and (mimetype not in tasks.DATA_FORMATS
