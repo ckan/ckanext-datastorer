@@ -45,6 +45,7 @@ class Webstorer(CkanCommand):
         context = json.dumps({
             'site_url': config['ckan.site_url'],
             'apikey': user.get('apikey'),
+            'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),
             'webstore_url': config.get('ckan.webstore_url')
         })
