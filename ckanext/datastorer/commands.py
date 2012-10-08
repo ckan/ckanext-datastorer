@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 import json
 import requests
@@ -25,7 +26,7 @@ class Webstorer(CkanCommand):
     summary = __doc__.split('\n')[0]
     usage = __doc__
     min_args = 1
-    max_args = 1
+    max_args = 2
 
     def command(self):
         """
@@ -57,10 +58,26 @@ class Webstorer(CkanCommand):
             headers = {
                 'content-type:': 'application/json'
             }
-            response = requests.post(api_url +
-                                     '/current_package_list_with_resources',
-                                     "{}", headers=headers)
-            packages = json.loads(response.content).get('result')
+
+
+            if len(self.args) == 2:
+                response = requests.post(api_url +
+                                         '/package_show',
+                                         json.dumps({"id":self.args[1]}), headers=headers)
+                if response.status_code == 200:
+                    packages = [json.loads(response.content).get('result')]
+                elif response.status_code == 404:
+                    logger.error('Dataset %s not found' % self.args[1])
+                    sys.exit(1)
+                else:
+                    logger.error('Error getting dataset %s' % self.args[1])
+                    sys.exit(1)
+
+            else:
+                response = requests.post(api_url +
+                                         '/current_package_list_with_resources',
+                                         "{}", headers=headers)
+                packages = json.loads(response.content).get('result')
 
             for package in packages:
                 for resource in package.get('resources', []):
