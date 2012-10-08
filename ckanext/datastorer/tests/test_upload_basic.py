@@ -17,13 +17,14 @@ class TestUploadBasic(object):
 
         # get config options
         config = ConfigParser.RawConfigParser({
-            'proxy_host': '0.0.0.0',
+            'ckan_host': '0.0.0.0',
         })
         config.read(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  'tests_config.cfg'))
 
-        cls.host = config.get('tests', 'proxy_host')
+        cls.host = config.get('tests', 'ckan_host')
         cls.api_key = config.get('tests', 'user_api_key')
+        cls.resource_ids = []
 
         if not cls.api_key:
             raise Exception('You must add a sysadmin API key to the tests '
@@ -37,8 +38,8 @@ class TestUploadBasic(object):
         #make sure services are running
         for i in range(0, 50):
             time.sleep(0.1)
-            response1 = requests.get('http://0.0.0.0:50001')
-            if not response1:
+            response = requests.get('http://0.0.0.0:50001')
+            if not response:
                 continue
             return
 
@@ -49,6 +50,21 @@ class TestUploadBasic(object):
     def teardown_class(cls):
         cls.static_files_server.kill()
 
+    def teardown(self):
+        self.clean_up()
+
+    def clean_up(self):
+        while self.resource_ids:
+            res_id = self.resource_ids.pop()
+            request = {'resource_id': res_id}
+            r = requests.post('http://%s/api/action/datastore_delete' % self.host,
+                         data=json.dumps(request),
+                         headers={'Content-Type': 'application/json',
+                                  'Authorization': self.api_key},
+                         )
+            if r.status_code != 200:
+                print r.text
+
     def make_resource_id(self):
 
         response = requests.post(
@@ -57,9 +73,13 @@ class TestUploadBasic(object):
                 {'name': str(uuid.uuid4()),
                  'resources': [{u'url': u'test'}]}
             ),
-            headers={'Authorization': self.api_key}
+            headers={'Authorization': self.api_key, 'content-type': 'application/json'}
         )
-        return json.loads(response.content)['result']['resources'][0]['id']
+        res_id = json.loads(response.content)['result']['resources'][0]['id']
+
+        self.resource_ids.append(res_id)
+
+        return res_id
 
     def test_csv_file(self):
 
@@ -76,15 +96,17 @@ class TestUploadBasic(object):
 
         tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
-        import time
-        time.sleep(0.5)
-
         response = requests.get(
-            'http://%s/api/data/%s/_search?q=*' % (self.host, resource_id),
-        )
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type": "application/json"})
 
-        response = json.loads(response.content)
-        assert_equal(len(response['hits']['hits']), 6)
+        result = json.loads(response.content)
+
+        assert result['result']['total'] == 6, (result['result']['total'], resource_id)
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'timestamp', u'id': u'date'},
+                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'text', u'id': u'place'}], result['fields']
 
     def test_tsv_file(self):
 
@@ -101,18 +123,16 @@ class TestUploadBasic(object):
 
         tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
-        import time
-        time.sleep(1.0)
-
         response = requests.get(
-            'http://%s/api/data/%s/_search?q=*' % (self.host, resource_id))
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type": "application/json"})
 
-        response = json.loads(response.content)
-        assert_equal(len(response['hits']['hits']), 6)
-
-        # Check the number of fields to enusre the lines have been split
-        # correctly
-        assert len(response['hits']['hits'][0]['_source'].keys()) == 3
+        result = json.loads(response.content)
+        assert result['result']['total'] == 6, (result['result']['total'], resource_id)
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'timestamp', u'id': u'date'},
+                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'text', u'id': u'place'}], result['fields']
 
     def test_tsv_file_with_incorrect_mimetype(self):
         '''Not all servers are well-behaved, and provide the wrong mime type.
@@ -135,18 +155,16 @@ class TestUploadBasic(object):
 
         tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
-        import time
-        time.sleep(1.0)
-
         response = requests.get(
-            'http://%s/api/data/%s/_search?q=*' % (self.host, resource_id))
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type": "application/json"})
 
-        response = json.loads(response.content)
-        assert_equal(len(response['hits']['hits']), 6)
-
-        # Check the number of fields to enusre the lines have been split
-        # correctly
-        assert len(response['hits']['hits'][0]['_source'].keys()) == 3
+        result = json.loads(response.content)
+        assert result['result']['total'] == 6, (result['result']['total'], resource_id)
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'timestamp', u'id': u'date'},
+                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'text', u'id': u'place'}], result['fields']
 
     def test_excel_file(self):
 
@@ -162,15 +180,16 @@ class TestUploadBasic(object):
 
         tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
-        import time
-        time.sleep(0.5)
-
         response = requests.get(
-            'http://%s/api/data/%s/_search?q=*' % (self.host, resource_id))
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type": "application/json"})
 
-        response = json.loads(response.content)
-
-        assert_equal(len(response['hits']['hits']), 6)
+        result = json.loads(response.content)
+        assert result['result']['total'] == 6, (result['result']['total'], resource_id)
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'timestamp', u'id': u'date'},
+                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'text', u'id': u'place'}], result['result']['fields']
 
     def test_messier_file(self):
 
@@ -189,11 +208,21 @@ class TestUploadBasic(object):
         tasks.datastorer_upload(json.dumps(context), json.dumps(data))
 
         response = requests.get(
-            'http://%s/api/data/%s/_search?q=*' % (self.host, resource_id))
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type": "application/json"})
 
-        response = json.loads(response.content)
+        result = json.loads(response.content)
 
-        assert_equal(len(response['hits']['hits']), 10)
+        assert result['result']['total'] == 564, (result['result']['total'], resource_id)
+        assert len(result['result']['records']) == 100
+
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'text', u'id': u'Body Name'},
+                                              {u'type': u'timestamp', u'id': u'Date'},
+                                              {u'type': u'int4', u'id': u'Transaction Number'},
+                                              {u'type': u'numeric', u'id': u'Amount'},
+                                              {u'type': u'text', u'id': u'Supplier'},
+                                              {u'type': u'text', u'id': u'Expense Area'}], result['result']['fields']
 
     def test_error_bad_url(self):
 

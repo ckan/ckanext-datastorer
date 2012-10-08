@@ -10,7 +10,7 @@ from ckan.lib.dictization.model_dictize import resource_dictize
 import json
 from datetime import datetime
 from logging import getLogger
-log = getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class WebstorerPlugin(SingletonPlugin):

@@ -1,12 +1,15 @@
 import json
 from messytables import (CSVTableSet, XLSTableSet, types_processor,
-                         headers_guess, headers_processor,
+                         headers_guess, headers_processor, type_guess,
                          offset_processor)
 from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
 import requests
 import datetime
 import messytables
+
+from logging import getLogger
+logger = getLogger(__name__)
 
 DATA_FORMATS = [
     'csv',
@@ -24,44 +27,27 @@ DATA_FORMATS = [
 ]
 
 
-class WebstorerError(Exception):
+class DatastoreError(Exception):
     pass
 
 
-def check_response_and_retry(response, webstore_request_url):
+def check_response_and_retry(response, datastore_request_url):
     try:
         if not response.status_code:
-            raise WebstorerError('Webstore is not reponding at %s with '
-                                 'response %s' % (webstore_request_url,
+            raise DatastoreError('Datastore is not reponding at %s with '
+                                 'response %s' % (datastore_request_url,
                                                   response))
     except Exception, e:
         datastorer_upload.retry(exc=e)
 
 
-def guess_types(rows):
-    ''' Simple guess types of fields, only allowed are int, float and string'''
-
-    headers = rows[0].keys()
-    guessed_types = []
-    for header in headers:
-        data_types = set([int, float])
-        for row in rows:
-            if not row.get(header):
-                continue
-            for data_type in list(data_types):
-                try:
-                    data_type(row[header])
-                except (TypeError, ValueError):
-                    data_types.discard(data_type)
-            if not data_types:
-                break
-        if int in data_types:
-            guessed_types.append(messytables.IntegerType())
-        elif float in data_types:
-            guessed_types.append(messytables.FloatType())
-        else:
-            guessed_types.append(messytables.StringType())
-    return guessed_types
+def stringify_processor():
+    def to_string(row_set, row):
+        for cell in row:
+            cell.value = unicode(cell.value)
+            cell.type = messytables.StringType()
+        return row
+    return to_string
 
 
 def datetime_procesor():
@@ -90,7 +76,7 @@ def datastorer_upload(context, data):
             'value': unicode(datastorer_upload.request.id),
             'error': '%s: %s' % (e.__class__.__name__,  unicode(e)),
             'last_updated': datetime.datetime.now().isoformat()
-        })
+        }, logger)
         raise
 
 
@@ -122,36 +108,37 @@ def _datastorer_upload(context, resource):
     row_set.register_processor(offset_processor(offset + 1))
     row_set.register_processor(datetime_procesor())
 
-    types = guess_types(list(row_set.dicts(sample=True)))
+    guessed_types = type_guess(row_set, strict=True)
     row_set.register_processor(offset_processor(offset + 1))
-    row_set.register_processor(types_processor(types))
+    row_set.register_processor(types_processor(guessed_types))
+    row_set.register_processor(stringify_processor())
 
     ckan_url = context['site_url'].rstrip('/')
 
-    webstore_request_url = '%s/api/data/%s/' % (ckan_url,
-                                                resource['id']
-                                                )
+    datastore_request_url = '%s/api/action/datastore_create' % (ckan_url)
 
     def send_request(data):
-        return requests.post(webstore_request_url + '_bulk',
-                             data="%s%s" % ("\n".join(data), "\n"),
+        request = {'resource_id': resource['id'],
+                   'fields': [dict(id=name) for name in headers],
+                   'records': data}
+
+        return requests.post(datastore_request_url,
+                             data=json.dumps(request),
                              headers={'Content-Type': 'application/json',
                                       'Authorization': context['apikey']},
                              )
 
     data = []
     for count, dict_ in enumerate(row_set.dicts()):
-        data.append(json.dumps({"index": {"_id": count + 1}}))
-        data.append(json.dumps(dict_))
+        data.append(dict(dict_))
         if (count % 100) == 0:
             response = send_request(data)
-            check_response_and_retry(response, webstore_request_url +
-                                     '_mapping')
+            check_response_and_retry(response, datastore_request_url)
             data[:] = []
 
     if data:
         response = send_request(data)
-        check_response_and_retry(response, webstore_request_url + '_mapping')
+        check_response_and_retry(response, datastore_request_url + '_mapping')
 
     ckan_request_url = ckan_url + '/api/action/resource_update'
 
@@ -169,5 +156,5 @@ def _datastorer_upload(context, resource):
                  'Authorization': context['apikey']})
 
     if response.status_code not in (201, 200):
-        raise WebstorerError('Ckan bad response code (%s). Response was %s' %
+        raise DatastoreError('Ckan bad response code (%s). Response was %s' %
                              (response.status_code, response.content))
