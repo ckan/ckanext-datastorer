@@ -62,8 +62,8 @@ class TestUploadBasic(object):
                          headers={'Content-Type': 'application/json',
                                   'Authorization': self.api_key},
                          )
-            if r.status_code != 200:
-                print r.text
+            if r.status_code != 200 and r.status_code != 404:
+                raise Exception('Error deleting datastore for resource %s') % resource_id
 
     def make_resource_id(self):
 
