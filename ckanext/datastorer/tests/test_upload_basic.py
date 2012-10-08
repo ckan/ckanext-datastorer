@@ -30,10 +30,17 @@ class TestUploadBasic(object):
             raise Exception('You must add a sysadmin API key to the tests '
                             ' configuration file')
 
+        # Make sure CKAN is running
+        response = requests.get('http://%s' % cls.host)
+        if not response.status_code == 200:
+            raise Exception('Make sure you are running the CKAN instance defined in the tests '
+                            ' configuration file')
+
         static_files_server = os.path.join(os.path.dirname(__file__),
                                            'static_files_server.py')
         cls.static_files_server = subprocess.Popen(
             ['python', static_files_server])
+
 
         #make sure services are running
         for i in range(0, 50):
