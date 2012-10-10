@@ -109,6 +109,8 @@ class TestUploadBasic(object):
 
         result = json.loads(response.content)
 
+        value = result['result']['records'][0][u'temperature']
+        assert value == 1, value
         assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
@@ -135,6 +137,9 @@ class TestUploadBasic(object):
              headers={"content-type": "application/json"})
 
         result = json.loads(response.content)
+
+        value = result['result']['records'][0][u'temperature']
+        assert value == 1, value
         assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
@@ -192,6 +197,8 @@ class TestUploadBasic(object):
              headers={"content-type": "application/json"})
 
         result = json.loads(response.content)
+        value = result['result']['records'][0][u'temperature']
+        assert value == 1, value
         assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
@@ -220,6 +227,8 @@ class TestUploadBasic(object):
 
         result = json.loads(response.content)
 
+        value = result['result']['records'][0][u'Transaction Number']
+        assert value == 136980, value
         assert result['result']['total'] == 564, (result['result']['total'], resource_id)
         assert len(result['result']['records']) == 100
 
@@ -253,6 +262,8 @@ class TestUploadBasic(object):
 
         result = json.loads(response.content)
 
+        value = result['result']['records'][0][u'Supplier Name']
+        assert value == 'ALBANY OFFICE FURNITURE SOLUTIONS', value
         assert result['result']['total'] == 230, (result['result']['total'], resource_id)
         assert len(result['result']['records']) == 100
 

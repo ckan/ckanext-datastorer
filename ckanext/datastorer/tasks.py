@@ -64,9 +64,10 @@ def check_response_and_retry(response, datastore_request_url):
 def stringify_processor():
     def to_string(row_set, row):
         for cell in row:
-            if cell.value == None:
-                continue
-            cell.value = unicode(cell.value)
+            if not cell.value:
+                cell.value = None
+            else:
+                cell.value = unicode(cell.value)
             cell.type = messytables.StringType()
         return row
     return to_string
@@ -131,7 +132,7 @@ def _datastorer_upload(context, resource):
     row_set.register_processor(datetime_procesor())
 
     guessed_types = type_guess(
-        row_set,
+        row_set.sample,
         [
             messytables.types.StringType,
             messytables.types.IntegerType,
@@ -141,7 +142,7 @@ def _datastorer_upload(context, resource):
         ],
         strict=True
     )
-    row_set.register_processor(offset_processor(offset + 1))
+    #row_set.register_processor(offset_processor(offset + 1))
     row_set.register_processor(types_processor(guessed_types))
     row_set.register_processor(stringify_processor())
 
@@ -163,6 +164,7 @@ def _datastorer_upload(context, resource):
                              )
 
     data = []
+    count = 0
     for count, dict_ in enumerate(row_set.dicts()):
         data.append(dict(dict_))
         if (count % 100) == 0:
@@ -173,6 +175,8 @@ def _datastorer_upload(context, resource):
     if data:
         response = send_request(data)
         check_response_and_retry(response, datastore_request_url + '_mapping')
+
+    print "Full count:", count
 
     ckan_request_url = ckan_url + '/api/action/resource_update'
 
