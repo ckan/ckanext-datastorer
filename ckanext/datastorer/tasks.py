@@ -6,6 +6,7 @@ from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
 import requests
 import datetime
+import dateutil.parser as parser
 import messytables
 
 from logging import getLogger
@@ -27,6 +28,25 @@ DATA_FORMATS = [
 ]
 
 
+class DateUtilType(messytables.types.CellType):
+    """ The date util type uses the dateutil library to
+    parse the dates."""
+    guessing_weight = 5
+
+    def cast(self, value):
+        return parser.parse(value)
+
+
+TYPE_MAPPING = {
+    messytables.types.StringType: 'text',
+    messytables.types.IntegerType: 'int',
+    messytables.types.FloatType: 'float',
+    messytables.types.DecimalType: 'numeric',
+    messytables.types.DateType: 'timestamp',
+    DateUtilType: 'timestamp'
+}
+
+
 class DatastoreError(Exception):
     pass
 
@@ -44,7 +64,10 @@ def check_response_and_retry(response, datastore_request_url):
 def stringify_processor():
     def to_string(row_set, row):
         for cell in row:
-            cell.value = unicode(cell.value)
+            if not cell.value:
+                cell.value = None
+            else:
+                cell.value = unicode(cell.value)
             cell.type = messytables.StringType()
         return row
     return to_string
@@ -108,8 +131,18 @@ def _datastorer_upload(context, resource):
     row_set.register_processor(offset_processor(offset + 1))
     row_set.register_processor(datetime_procesor())
 
-    guessed_types = type_guess(row_set, strict=True)
-    row_set.register_processor(offset_processor(offset + 1))
+    guessed_types = type_guess(
+        row_set.sample,
+        [
+            messytables.types.StringType,
+            messytables.types.IntegerType,
+            messytables.types.FloatType,
+            messytables.types.DecimalType,
+            DateUtilType
+        ],
+        strict=True
+    )
+    #row_set.register_processor(offset_processor(offset + 1))
     row_set.register_processor(types_processor(guessed_types))
     row_set.register_processor(stringify_processor())
 
@@ -117,9 +150,11 @@ def _datastorer_upload(context, resource):
 
     datastore_request_url = '%s/api/action/datastore_create' % (ckan_url)
 
+    guessed_type_names = [TYPE_MAPPING[type(gt)] for gt in guessed_types]
+
     def send_request(data):
         request = {'resource_id': resource['id'],
-                   'fields': [dict(id=name) for name in headers],
+                   'fields': [dict(id=name, type=typename) for name, typename in zip(headers, guessed_type_names)],
                    'records': data}
 
         return requests.post(datastore_request_url,
@@ -129,6 +164,7 @@ def _datastorer_upload(context, resource):
                              )
 
     data = []
+    count = 0
     for count, dict_ in enumerate(row_set.dicts()):
         data.append(dict(dict_))
         if (count % 100) == 0:
@@ -139,6 +175,8 @@ def _datastorer_upload(context, resource):
     if data:
         response = send_request(data)
         check_response_and_retry(response, datastore_request_url + '_mapping')
+
+    print "Full count:", count
 
     ckan_request_url = ckan_url + '/api/action/resource_update'
 
