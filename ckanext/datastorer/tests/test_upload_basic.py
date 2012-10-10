@@ -113,7 +113,7 @@ class TestUploadBasic(object):
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
                                               {u'type': u'int4', u'id': u'temperature'},
-                                              {u'type': u'text', u'id': u'place'}], result['fields']
+                                              {u'type': u'text', u'id': u'place'}], result['result']['fields']
 
     def test_tsv_file(self):
 
@@ -201,7 +201,7 @@ class TestUploadBasic(object):
     def test_messier_file(self):
 
         data = {
-            'url': 'http://0.0.0.0:50001/static/3ffdcd42-5c63-4089-84dd-c23876259973',
+            'url': 'http://0.0.0.0:50001/static/3ffdcd42-5c63-4089-84dd-c23876259973.csv',
             'format': 'csv'}
 
         context = {'site_url': 'http://%s' % self.host,
@@ -230,6 +230,43 @@ class TestUploadBasic(object):
                                               {u'type': u'numeric', u'id': u'Amount'},
                                               {u'type': u'text', u'id': u'Supplier'},
                                               {u'type': u'text', u'id': u'Expense Area'}], result['result']['fields']
+
+    def test_another_file(self):
+
+        data = {
+            'url': 'http://0.0.0.0:50001/static/october_2011.csv',
+            'format': 'csv'}
+
+        context = {'site_url': 'http://%s' % self.host,
+                   'apikey': self.api_key,
+                   'site_user_apikey': self.api_key,
+                   }
+
+        resource_id = self.make_resource_id()
+        data['id'] = resource_id
+
+        tasks.datastorer_upload(json.dumps(context), json.dumps(data))
+
+        response = requests.get(
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type": "application/json"})
+
+        result = json.loads(response.content)
+
+        assert result['result']['total'] == 230, (result['result']['total'], resource_id)
+        assert len(result['result']['records']) == 100
+
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'text', u'id': u'Directorate'},
+                                              {u'type': u'text', u'id': u'Service Area'},
+                                              {u'type': u'text', u'id': u'Expenditure Category'},
+                                              {u'type': u'timestamp', u'id': u'Payment Date'},
+                                              {u'type': u'text', u'id': u'Supplier Name'},
+                                              {u'type': u'int4', u'id': u'Internal Ref'},
+                                              {u'type': u'text', u'id': u'Capital/ Revenue'},
+                                              {u'type': u'text', u'id': u'Cost Centre'},
+                                              {u'type': u'text', u'id': u'Cost Centre Description'},
+                                              {u'type': u'text', u'id': u'Grand Total'}], result['result']['fields']
 
     def test_error_bad_url(self):
 
