@@ -70,7 +70,7 @@ class TestUploadBasic(object):
                                   'Authorization': self.api_key},
                          )
             if r.status_code != 200 and r.status_code != 404:
-                raise Exception('Error deleting datastore for resource %s') % resource_id
+                raise Exception('Error deleting datastore for resource %s') % res_id
 
     def make_resource_id(self):
 
@@ -277,7 +277,7 @@ class TestUploadBasic(object):
                                               {u'type': u'text', u'id': u'Capital/ Revenue'},
                                               {u'type': u'text', u'id': u'Cost Centre'},
                                               {u'type': u'text', u'id': u'Cost Centre Description'},
-                                              {u'type': u'text', u'id': u'Grand Total'}], result['result']['fields']
+                                              {u'type': u'float8', u'id': u'Grand Total'}], result['result']['fields']
 
     def test_long_file(self):
 
