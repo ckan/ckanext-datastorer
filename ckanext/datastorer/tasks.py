@@ -9,9 +9,6 @@ import datetime
 import dateutil.parser as parser
 import messytables
 
-from logging import getLogger
-logger = getLogger(__name__)
-
 DATA_FORMATS = [
     'csv',
     'text/csv',
@@ -57,6 +54,10 @@ def check_response_and_retry(response, datastore_request_url):
             raise DatastoreError('Datastore is not reponding at %s with '
                                  'response %s' % (datastore_request_url,
                                                   response))
+        if not response.status_code:
+            raise DatastoreError('Datastore responded at %s with '
+                                 'response %s' % (datastore_request_url,
+                                                  response))
     except Exception, e:
         datastorer_upload.retry(exc=e)
 
@@ -86,10 +87,11 @@ def datetime_procesor():
 @celery.task(name="datastorer.upload", max_retries=24 * 7,
              default_retry_delay=3600)
 def datastorer_upload(context, data):
+    logger = datastorer_upload.get_logger()
     try:
         data = json.loads(data)
         context = json.loads(context)
-        return _datastorer_upload(context, data)
+        return _datastorer_upload(context, data, logger)
     except Exception, e:
         update_task_status(context, {
             'entity_id': data['id'],
@@ -103,7 +105,7 @@ def datastorer_upload(context, data):
         raise
 
 
-def _datastorer_upload(context, resource):
+def _datastorer_upload(context, resource, logger):
 
     excel_types = ['xls', 'application/ms-excel', 'application/xls',
                    'application/vnd.ms-excel']
@@ -176,7 +178,7 @@ def _datastorer_upload(context, resource):
         response = send_request(data)
         check_response_and_retry(response, datastore_request_url + '_mapping')
 
-    print "Full count:", count
+    logger.info("There should be {n} entries in {res_id}.".format(n=count + 1, res_id=resource['id']))
 
     ckan_request_url = ckan_url + '/api/action/resource_update'
 
