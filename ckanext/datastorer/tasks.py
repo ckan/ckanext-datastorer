@@ -1,4 +1,5 @@
 import json
+import itertools
 import requests
 import datetime
 
@@ -118,8 +119,11 @@ def _datastorer_upload(context, resource, logger):
 
     f = open(result['saved_file'], 'rb')
 
+    is_excel = False
+
     if content_type in excel_types or resource['format'] in excel_types:
         table_sets = XLSTableSet.from_fileobj(f)
+        is_excel = True
     else:
         is_tsv = (content_type in tsv_types or
                   resource['format'] in tsv_types)
@@ -137,7 +141,7 @@ def _datastorer_upload(context, resource, logger):
     print "offset", offset
 
     guessed_types = type_guess(
-        row_set.sample,
+        itertools.islice(row_set.sample, offset + 1, None),
         [
             messytables.types.StringType,
             messytables.types.IntegerType,
@@ -170,7 +174,11 @@ def _datastorer_upload(context, resource, logger):
 
     data = []
     count = 0
-    for count, dict_ in enumerate(row_set.dicts()):
+
+    dicts = row_set.dicts()
+    if is_excel:
+        dicts = itertools.islice(dicts, offset + 1, None)
+    for count, dict_ in enumerate(dicts):
         data.append(dict(dict_))
         if (count % 100) == 0:
             response = send_request(data)
