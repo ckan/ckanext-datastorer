@@ -1,13 +1,15 @@
 import json
+import itertools
+import requests
+import datetime
+
+import messytables
 from messytables import (CSVTableSet, XLSTableSet, types_processor,
                          headers_guess, headers_processor, type_guess,
                          offset_processor)
 from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
-import requests
-import datetime
 import dateutil.parser as parser
-import messytables
 
 DATA_FORMATS = [
     'csv',
@@ -44,22 +46,21 @@ TYPE_MAPPING = {
 }
 
 
-class DatastoreError(Exception):
+class DatastorerException(Exception):
     pass
 
 
 def check_response_and_retry(response, datastore_request_url):
     try:
         if not response.status_code:
-            raise DatastoreError('Datastore is not reponding at %s with '
-                                 'response %s' % (datastore_request_url,
-                                                  response))
-        if not response.status_code:
-            raise DatastoreError('Datastore responded at %s with '
-                                 'response %s' % (datastore_request_url,
-                                                  response))
+            raise DatastorerException('Datastore is not reponding at %s with '
+                    'response %s' % (datastore_request_url, response))
     except Exception, e:
         datastorer_upload.retry(exc=e)
+
+    if response.status_code not in (201, 200):
+        raise DatastorerException('Datastorer bad response code (%s) on %s. Response was %s' %
+                (response.status_code, datastore_request_url, response))
 
 
 def stringify_processor():
@@ -118,8 +119,11 @@ def _datastorer_upload(context, resource, logger):
 
     f = open(result['saved_file'], 'rb')
 
+    is_excel = False
+
     if content_type in excel_types or resource['format'] in excel_types:
         table_sets = XLSTableSet.from_fileobj(f)
+        is_excel = True
     else:
         is_tsv = (content_type in tsv_types or
                   resource['format'] in tsv_types)
@@ -133,8 +137,11 @@ def _datastorer_upload(context, resource, logger):
     row_set.register_processor(offset_processor(offset + 1))
     row_set.register_processor(datetime_procesor())
 
+    logger.info('Header offset: {0}.'.format(offset))
+    print "offset", offset
+
     guessed_types = type_guess(
-        row_set.sample,
+        itertools.islice(row_set.sample, offset + 1, None),
         [
             messytables.types.StringType,
             messytables.types.IntegerType,
@@ -167,7 +174,11 @@ def _datastorer_upload(context, resource, logger):
 
     data = []
     count = 0
-    for count, dict_ in enumerate(row_set.dicts()):
+
+    dicts = row_set.dicts()
+    if is_excel:
+        dicts = itertools.islice(dicts, offset + 1, None)
+    for count, dict_ in enumerate(dicts):
         data.append(dict(dict_))
         if (count % 100) == 0:
             response = send_request(data)
@@ -196,5 +207,5 @@ def _datastorer_upload(context, resource, logger):
                  'Authorization': context['apikey']})
 
     if response.status_code not in (201, 200):
-        raise DatastoreError('Ckan bad response code (%s). Response was %s' %
+        raise DatastorerException('Ckan bad response code (%s). Response was %s' %
                              (response.status_code, response.content))
