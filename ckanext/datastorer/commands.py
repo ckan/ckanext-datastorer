@@ -86,13 +86,15 @@ class Webstorer(CkanCommand):
                 for resource in package.get('resources', []):
                     data = json.dumps(resource, {'model': model})
 
-                    # skip update if the datastore is already active (a table exists)
-                    if resource.get('datastore_active'):
-                        continue
+                    ## skip update if the datastore is already active (a table exists)
+                    #if resource.get('datastore_active'):
+                    #    continue
                     mimetype = resource['mimetype']
                     if mimetype and (mimetype not in tasks.DATA_FORMATS
-                                     or resource['format'] not in
+                                     or resource['format'].lower() not in
                                      tasks.DATA_FORMATS):
+                        logger.warn('Skipping resource %s from package %s because MIME type %s or format %s is unrecognized'
+                              % (resource['url'], package['name'], mimetype, resource['format']))
                         continue
 
                     logger.info('Datastore resource from resource %s from '
