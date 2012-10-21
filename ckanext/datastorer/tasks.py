@@ -36,7 +36,7 @@ class DateUtilType(messytables.types.CellType):
 
 TYPE_MAPPING = {
     messytables.types.StringType: 'text',
-    messytables.types.IntegerType: 'int',
+    messytables.types.IntegerType: 'numeric', # 'int' may not be big enough, and type detection may not realize it needs to be big
     messytables.types.FloatType: 'float',
     messytables.types.DecimalType: 'numeric',
     messytables.types.DateType: 'timestamp',
