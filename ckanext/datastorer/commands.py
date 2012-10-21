@@ -14,13 +14,16 @@ logger = logging.getLogger()
 
 class Webstorer(CkanCommand):
     """
-    Upload all available resources to the webstore if they are not already in the datastore.
+    Upload a resource or all resources in the datastore.
 
     Usage:
 
-        paster datastorer update [package-id]
-           - Archive all resources or just those belonging to a specific
-             package if a package id is provided
+    paster datastorer [update|queue] [package-id]
+           - Update all resources or just those belonging to a specific
+             package if a package id is provided. Use 'update' to update
+             the resource synchronously and log to stdout, or 'queue'
+             to queue the update to run asynchronously in celery
+             (output goes to celery's logs).
 
     """
     summary = __doc__.split('\n')[0]
@@ -43,18 +46,18 @@ class Webstorer(CkanCommand):
         import tasks
         user = get_action('get_site_user')({'model': model,
                                             'ignore_auth': True}, {})
-        context = json.dumps({
+        context = {
             'site_url': config['ckan.site_url'],
             'apikey': user.get('apikey'),
             'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),
             'webstore_url': config.get('ckan.webstore_url')
-        })
+        }
         if not config['ckan.site_url']:
             raise Exception('You have to set the "ckan.site_url" property in your ini file.')
         api_url = urlparse.urljoin(config['ckan.site_url'], 'api/action')
 
-        if cmd == 'update':
+        if cmd in ('update', 'queue'):
             headers = {
                 'content-type:': 'application/json'
             }
@@ -96,24 +99,29 @@ class Webstorer(CkanCommand):
                                 'package %s' % (resource['url'],
                                                 package['name']))
 
-                    task_id = make_uuid()
-                    datastorer_task_status = {
-                        'entity_id': resource['id'],
-                        'entity_type': u'resource',
-                        'task_type': u'datastorer',
-                        'key': u'celery_task_id',
-                        'value': task_id,
-                        'last_updated': datetime.now().isoformat()
-                    }
-                    datastorer_task_context = {
-                        'model': model,
-                        'user': user.get('name')
-                    }
-
-                    get_action('task_status_update')(datastorer_task_context,
-                                                     datastorer_task_status)
-                    celery.send_task("datastorer.upload",
-                                     args=[context, data],
+                    if cmd == "update":
+                        logger.setLevel(0)
+                        from tasks import _datastorer_upload
+                        _datastorer_upload(context, resource, logger)
+                    elif cmd == "queue":
+                        task_id = make_uuid()
+                        datastorer_task_status = {
+                            'entity_id': resource['id'],
+                            'entity_type': u'resource',
+                            'task_type': u'datastorer',
+                            'key': u'celery_task_id',
+                            'value': task_id,
+                            'last_updated': datetime.now().isoformat()
+                        }
+                        datastorer_task_context = {
+                            'model': model,
+                            'user': user.get('name')
+                        }
+    
+                        get_action('task_status_update')(datastorer_task_context,
+                                                         datastorer_task_status)
+                        celery.send_task("datastorer.upload",
+                                     args=[json.dumps(context), data],
                                      task_id=task_id)
         else:
             logger.error('Command %s not recognized' % (cmd,))
