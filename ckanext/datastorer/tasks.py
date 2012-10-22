@@ -125,7 +125,6 @@ def _datastorer_upload(context, resource, logger):
     row_set.register_processor(datetime_procesor())
 
     logger.info('Header offset: {0}.'.format(offset))
-    print "offset", offset
 
     guessed_types = type_guess(
         row_set.sample,
@@ -151,24 +150,25 @@ def _datastorer_upload(context, resource, logger):
         request = {'resource_id': resource['id'],
                    'fields': [dict(id=name, type=typename) for name, typename in zip(headers, guessed_type_names)],
                    'records': data}
-        return requests.post(datastore_create_request_url,
-                             data=json.dumps(request),
-                             headers={'Content-Type': 'application/json',
-                                      'Authorization': context['apikey']},
-                             )
+        response = requests.post(datastore_create_request_url,
+                         data=json.dumps(request),
+                         headers={'Content-Type': 'application/json',
+                                  'Authorization': context['apikey']},
+                         )
+        check_response_and_retry(response, datastore_create_request_url)
+
+    logger.info('Creating: {0}.'.format(resource['id']))
 
     data = []
     count = 0
     for dict_ in row_set.dicts():
         count += 1
         if len(data) == 100:
-            response = send_request(data)
-            check_response_and_retry(response, datastore_create_request_url)
+            send_request(data)
             data[:] = []
 
     if data:
-        response = send_request(data)
-        check_response_and_retry(response, datastore_create_request_url)
+        send_request(data)
 
     logger.info("There should be {n} entries in {res_id}.".format(n=count, res_id=resource['id']))
 
