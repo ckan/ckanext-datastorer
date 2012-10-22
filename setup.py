@@ -6,7 +6,7 @@ version = '0.0'
 setup(
 	name='ckanext-datastorer',
 	version=version,
-	description="Tasks that upload data to the webstore.",
+	description="Tasks that upload data to the DataStore.",
 	long_description="""\
 	""",
 	classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -25,10 +25,10 @@ setup(
 	entry_points=\
 	"""
     [paste.paster_command]
-    datastorer = ckanext.datastorer.commands:Webstorer
+    datastorer = ckanext.datastorer.commands:Datastorer
 
     [ckan.plugins]
-    datastorer = ckanext.datastorer.plugin:WebstorerPlugin
+    datastorer = ckanext.datastorer.plugin:DatastorerPlugin
 
     [ckan.celery_task]
     tasks = ckanext.datastorer.celery_import:task_imports

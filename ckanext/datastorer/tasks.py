@@ -27,7 +27,8 @@ DATA_FORMATS = [
 
 TYPE_MAPPING = {
     messytables.types.StringType: 'text',
-    messytables.types.IntegerType: 'numeric', # 'int' may not be big enough, and type detection may not realize it needs to be big
+    messytables.types.IntegerType: 'numeric',  # 'int' may not be big enough,
+                    # and type detection may not realize it needs to be big
     messytables.types.FloatType: 'float',
     messytables.types.DecimalType: 'numeric',
     messytables.types.DateType: 'timestamp',
@@ -50,18 +51,6 @@ def check_response_and_retry(response, datastore_request_url):
     if response.status_code not in (201, 200):
         raise DatastorerException('Datastorer bad response code (%s) on %s. Response was %s' %
                 (response.status_code, datastore_request_url, response))
-
-def log_response(logger, message, resource, response):
-    if response.status_code == 200:
-        logger.info(message.format(res_id=resource['id'], response="Success"))
-    else:
-        err = response.content
-        try:
-            import pprint, json
-            err = "\n" + pprint.pformat(json.loads(response.content)["error"], indent=4, width=40)
-        except:
-            pass
-        logger.error(message.format(res_id=resource['id'], response="Error: Response Code " + str(response.status_code) + ": " + err))
 
 
 def stringify_processor():
@@ -154,50 +143,35 @@ def _datastorer_upload(context, resource, logger):
 
     ckan_url = context['site_url'].rstrip('/')
 
-    datastore_request_url = '%s/api/action/datastore_' % (ckan_url)
+    datastore_request_url = '%s/api/action/datastore_create' % (ckan_url)
 
     guessed_type_names = [TYPE_MAPPING[type(gt)] for gt in guessed_types]
 
-    def send_request(data, action, logmessage):
-        request = {'resource_id': resource['id'] }
-        if action == "create":
-            request['fields'] = [dict(id=name, type=typename) for name, typename in zip(headers, guessed_type_names)]
-            request['records'] = []
-        if action == "upsert":
-            request['records'] = data
-            request['method'] = 'insert'
-            
-        #import pprint
-        #print datastore_request_url+action
-        #pprint.pprint(request)
-        #print
-            
-        response = requests.post(datastore_request_url+action,
+    def send_request(data):
+        request = {'resource_id': resource['id']}
+        request['fields'] = [dict(id=name, type=typename) for name, typename in zip(headers, guessed_type_names)]
+        request['records'] = []
+
+        response = requests.post(datastore_request_url,
                              data=json.dumps(request),
                              headers={'Content-Type': 'application/json',
                                       'Authorization': context['apikey']},
                              )
-        
-        log_response(logger, logmessage, resource, response)
-        
-        return response
 
-    send_request(None, "delete", "Deleted {res_id}: {response}.")
-    send_request(None, "create", "Created {res_id}: {response}.")
+        return response
 
     data = []
     count = 0
     for dict_ in row_set.dicts():
-        data.append(dict(dict_))
         count += 1
         if len(data) == 100:
-            response = send_request(data, "upsert", "Uploaded to {res_id}: {response}.")
-            check_response_and_retry(response, datastore_request_url + "upsert")
+            response = send_request(data)
+            check_response_and_retry(response, datastore_request_url + "create")
             data[:] = []
 
-    if len(data) > 0:
-        response = send_request(data, "upsert", "Uploaded to {res_id}: {response}.")
-        check_response_and_retry(response, datastore_request_url + "upsert")
+    if data:
+        response = send_request(data)
+        check_response_and_retry(response, datastore_request_url + "create")
 
     logger.info("There should be {n} entries in {res_id}.".format(n=count, res_id=resource['id']))
 

@@ -8,11 +8,12 @@ from ckan.lib.cli import CkanCommand
 from ckan.logic import get_action
 from ckan import model
 from ckan.model.types import make_uuid
+import tasks._datastorer_upload as _datastorer_upload
 import logging
 logger = logging.getLogger()
 
 
-class Webstorer(CkanCommand):
+class Datastorer(CkanCommand):
     """
     Upload a resource or all resources in the datastore.
 
@@ -36,7 +37,7 @@ class Webstorer(CkanCommand):
         Parse command line arguments and call appropriate method.
         """
         if not self.args or self.args[0] in ['--help', '-h', 'help']:
-            print Webstorer.__doc__
+            print Datastorer.__doc__
             return
 
         cmd = self.args[0]
@@ -62,11 +63,10 @@ class Webstorer(CkanCommand):
                 'content-type:': 'application/json'
             }
 
-
             if len(self.args) == 2:
                 response = requests.post(api_url +
                                          '/package_show',
-                                         json.dumps({"id":self.args[1]}), headers=headers)
+                                         json.dumps({"id": self.args[1]}), headers=headers)
                 if response.status_code == 200:
                     packages = [json.loads(response.content).get('result')]
                 elif response.status_code == 404:
@@ -87,8 +87,8 @@ class Webstorer(CkanCommand):
                     data = json.dumps(resource, {'model': model})
 
                     ## skip update if the datastore is already active (a table exists)
-                    #if resource.get('datastore_active'):
-                    #    continue
+                    if resource.get('datastore_active'):
+                        continue
                     mimetype = resource['mimetype']
                     if mimetype and (mimetype not in tasks.DATA_FORMATS
                                      or resource['format'].lower() not in
@@ -103,7 +103,6 @@ class Webstorer(CkanCommand):
 
                     if cmd == "update":
                         logger.setLevel(0)
-                        from tasks import _datastorer_upload
                         _datastorer_upload(context, resource, logger)
                     elif cmd == "queue":
                         task_id = make_uuid()
@@ -119,7 +118,7 @@ class Webstorer(CkanCommand):
                             'model': model,
                             'user': user.get('name')
                         }
-    
+
                         get_action('task_status_update')(datastorer_task_context,
                                                          datastorer_task_status)
                         celery.send_task("datastorer.upload",

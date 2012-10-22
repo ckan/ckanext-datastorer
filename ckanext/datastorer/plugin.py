@@ -13,11 +13,11 @@ from logging import getLogger
 logger = getLogger(__name__)
 
 
-class WebstorerPlugin(SingletonPlugin):
+class DatastorerPlugin(SingletonPlugin):
     """
     Registers to be notified whenever CKAN resources are created or their
     URLs change, and will create a new ckanext.datastorer celery task to
-    put the resource in the webstore.
+    put the resource in the datastore.
     """
     implements(IDomainObjectModification, inherit=True)
     implements(IResourceUrlChange)
