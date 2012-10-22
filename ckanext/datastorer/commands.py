@@ -86,7 +86,7 @@ class Datastorer(CkanCommand):
                 for resource in package.get('resources', []):
                     data = json.dumps(resource, {'model': model})
 
-                    ## skip update if the datastore is already active (a table exists)
+                    # skip update if the datastore is already active (a table exists)
                     if resource.get('datastore_active'):
                         continue
                     mimetype = resource['mimetype']

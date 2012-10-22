@@ -40,17 +40,17 @@ class DatastorerException(Exception):
     pass
 
 
-def check_response_and_retry(response, datastore_request_url):
+def check_response_and_retry(response, datastore_create_request_url):
     try:
         if not response.status_code:
             raise DatastorerException('Datastore is not reponding at %s with '
-                    'response %s' % (datastore_request_url, response))
+                    'response %s' % (datastore_create_request_url, response))
     except Exception, e:
         datastorer_upload.retry(exc=e)
 
     if response.status_code not in (201, 200):
         raise DatastorerException('Datastorer bad response code (%s) on %s. Response was %s' %
-                (response.status_code, datastore_request_url, response))
+                (response.status_code, datastore_create_request_url, response))
 
 
 def stringify_processor():
@@ -143,22 +143,19 @@ def _datastorer_upload(context, resource, logger):
 
     ckan_url = context['site_url'].rstrip('/')
 
-    datastore_request_url = '%s/api/action/datastore_create' % (ckan_url)
+    datastore_create_request_url = '%s/api/action/datastore_create' % (ckan_url)
 
     guessed_type_names = [TYPE_MAPPING[type(gt)] for gt in guessed_types]
 
     def send_request(data):
-        request = {'resource_id': resource['id']}
-        request['fields'] = [dict(id=name, type=typename) for name, typename in zip(headers, guessed_type_names)]
-        request['records'] = []
-
-        response = requests.post(datastore_request_url,
+        request = {'resource_id': resource['id'],
+                   'fields': [dict(id=name, type=typename) for name, typename in zip(headers, guessed_type_names)],
+                   'records': data}
+        return requests.post(datastore_create_request_url,
                              data=json.dumps(request),
                              headers={'Content-Type': 'application/json',
                                       'Authorization': context['apikey']},
                              )
-
-        return response
 
     data = []
     count = 0
@@ -166,12 +163,12 @@ def _datastorer_upload(context, resource, logger):
         count += 1
         if len(data) == 100:
             response = send_request(data)
-            check_response_and_retry(response, datastore_request_url + "create")
+            check_response_and_retry(response, datastore_create_request_url)
             data[:] = []
 
     if data:
         response = send_request(data)
-        check_response_and_retry(response, datastore_request_url + "create")
+        check_response_and_retry(response, datastore_create_request_url)
 
     logger.info("There should be {n} entries in {res_id}.".format(n=count, res_id=resource['id']))
 
