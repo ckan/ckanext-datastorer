@@ -9,7 +9,6 @@ from messytables import (CSVTableSet, XLSTableSet, types_processor,
                          offset_processor)
 from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
-import dateutil.parser as parser
 
 DATA_FORMATS = [
     'csv',
@@ -27,22 +26,13 @@ DATA_FORMATS = [
 ]
 
 
-class DateUtilType(messytables.types.CellType):
-    """ The date util type uses the dateutil library to
-    parse the dates."""
-    guessing_weight = 5
-
-    def cast(self, value):
-        return parser.parse(value)
-
-
 TYPE_MAPPING = {
     messytables.types.StringType: 'text',
     messytables.types.IntegerType: 'int',
     messytables.types.FloatType: 'float',
     messytables.types.DecimalType: 'numeric',
     messytables.types.DateType: 'timestamp',
-    DateUtilType: 'timestamp'
+    messytables.types.DateUtilType: 'timestamp'
 }
 
 
@@ -119,11 +109,8 @@ def _datastorer_upload(context, resource, logger):
 
     f = open(result['saved_file'], 'rb')
 
-    is_excel = False
-
     if content_type in excel_types or resource['format'] in excel_types:
         table_sets = XLSTableSet.from_fileobj(f)
-        is_excel = True
     else:
         is_tsv = (content_type in tsv_types or
                   resource['format'] in tsv_types)
@@ -147,7 +134,7 @@ def _datastorer_upload(context, resource, logger):
             messytables.types.IntegerType,
             messytables.types.FloatType,
             messytables.types.DecimalType,
-            DateUtilType
+            messytables.types.DateUtilType
         ],
         strict=True
     )
@@ -176,8 +163,6 @@ def _datastorer_upload(context, resource, logger):
     count = 0
 
     dicts = row_set.dicts()
-    if is_excel:
-        dicts = itertools.islice(dicts, offset + 1, None)
     for count, dict_ in enumerate(dicts):
         data.append(dict(dict_))
         if (count % 100) == 0:
