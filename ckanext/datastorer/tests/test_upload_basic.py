@@ -110,11 +110,11 @@ class TestUploadBasic(object):
         result = json.loads(response.content)
 
         value = result['result']['records'][0][u'temperature']
-        assert value == 1, value
+        assert int(value) == 1, value
         assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
-                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'numeric', u'id': u'temperature'},
                                               {u'type': u'text', u'id': u'place'}], result['result']['fields']
 
     def test_tsv_file(self):
@@ -139,11 +139,11 @@ class TestUploadBasic(object):
         result = json.loads(response.content)
 
         value = result['result']['records'][0][u'temperature']
-        assert value == 1, value
+        assert int(value) == 1, value
         assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
-                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'numeric', u'id': u'temperature'},
                                               {u'type': u'text', u'id': u'place'}], result['fields']
 
     def test_tsv_file_with_incorrect_mimetype(self):
@@ -175,7 +175,7 @@ class TestUploadBasic(object):
         assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
-                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'numeric', u'id': u'temperature'},
                                               {u'type': u'text', u'id': u'place'}], result['fields']
 
     def test_excel_file(self):
@@ -198,11 +198,11 @@ class TestUploadBasic(object):
 
         result = json.loads(response.content)
         value = result['result']['records'][0][u'temperature']
-        assert value == 1, value
+        assert int(value) == 1, value
         assert result['result']['total'] == 6, (result['result']['total'], resource_id)
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'timestamp', u'id': u'date'},
-                                              {u'type': u'int4', u'id': u'temperature'},
+                                              {u'type': u'numeric', u'id': u'temperature'},
                                               {u'type': u'text', u'id': u'place'}], result['result']['fields']
 
     def test_messier_file(self):
@@ -228,14 +228,14 @@ class TestUploadBasic(object):
         result = json.loads(response.content)
 
         value = result['result']['records'][0][u'Transaction Number']
-        assert value == 136980, value
+        assert int(value) == 136980, value
         assert result['result']['total'] == 564, (result['result']['total'], resource_id)
         assert len(result['result']['records']) == 100
 
         assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'text', u'id': u'Body Name'},
                                               {u'type': u'timestamp', u'id': u'Date'},
-                                              {u'type': u'int4', u'id': u'Transaction Number'},
+                                              {u'type': u'numeric', u'id': u'Transaction Number'},
                                               {u'type': u'numeric', u'id': u'Amount'},
                                               {u'type': u'text', u'id': u'Supplier'},
                                               {u'type': u'text', u'id': u'Expense Area'}], result['result']['fields']
@@ -273,7 +273,7 @@ class TestUploadBasic(object):
                                               {u'type': u'text', u'id': u'Expenditure Category'},
                                               {u'type': u'timestamp', u'id': u'Payment Date'},
                                               {u'type': u'text', u'id': u'Supplier Name'},
-                                              {u'type': u'int4', u'id': u'Internal Ref'},
+                                              {u'type': u'numeric', u'id': u'Internal Ref'},
                                               {u'type': u'text', u'id': u'Capital/ Revenue'},
                                               {u'type': u'text', u'id': u'Cost Centre'},
                                               {u'type': u'text', u'id': u'Cost Centre Description'},

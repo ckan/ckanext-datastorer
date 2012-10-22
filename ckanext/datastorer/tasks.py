@@ -162,6 +162,7 @@ def _datastorer_upload(context, resource, logger):
     data = []
     count = 0
     for dict_ in row_set.dicts():
+        data.append(dict(dict_))
         count += 1
         if len(data) == 100:
             send_request(data)

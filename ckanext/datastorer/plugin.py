@@ -38,12 +38,12 @@ class DatastorerPlugin(SingletonPlugin):
                                             'ignore_auth': True,
                                             'defer_commit': True}, {})
 
-        context = json.dumps({
+        context = {
             'site_url': h.url_for_static('/', qualified=True),
             'apikey': user.get('apikey'),
             'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),
-        })
+        }
         data = json.dumps(resource_dictize(resource, {'model': model}))
 
         task_id = make_uuid()
