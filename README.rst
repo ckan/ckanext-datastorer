@@ -40,6 +40,9 @@ A paster command is available, that lets you archive all resources or just those
 
 	paster datastorer update [package-id]
 
+To queue the update to run in celery, use:
+
+	paster datastorer queue [package-id]
 
 Developers
 ----------
