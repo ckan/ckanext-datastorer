@@ -1,5 +1,4 @@
 import json
-import itertools
 import requests
 import datetime
 
@@ -128,7 +127,7 @@ def _datastorer_upload(context, resource, logger):
     print "offset", offset
 
     guessed_types = type_guess(
-        itertools.islice(row_set.sample, offset + 1, None),
+        row_set.sample,
         [
             messytables.types.StringType,
             messytables.types.IntegerType,
