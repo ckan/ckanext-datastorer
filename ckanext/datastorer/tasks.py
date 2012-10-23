@@ -51,7 +51,7 @@ def check_response_and_retry(response, datastore_create_request_url):
 
     if response.status_code not in (201, 200):
         raise DatastorerException('Datastorer bad response code (%s) on %s. Response was %s' %
-                (response.status_code, datastore_create_request_url, response))
+                (response.status_code, datastore_create_request_url, response.content))
 
 
 def stringify_processor():
