@@ -1,6 +1,7 @@
 import json
 import requests
 import datetime
+import itertools
 
 import messytables
 from messytables import (CSVTableSet, XLSTableSet, types_processor,
@@ -159,16 +160,21 @@ def _datastorer_upload(context, resource, logger):
 
     logger.info('Creating: {0}.'.format(resource['id']))
 
-    data = []
-    count = 0
-    for dict_ in row_set.dicts():
-        data.append(dict(dict_))
-        count += 1
-        if len(data) == 100:
-            send_request(data)
-            data[:] = []
+    # generates chunks of data that can be loaded into ckan
+    # n is the maximum size of a chunk
+    def chunky(iterable, n):
+        it = iter(iterable)
+        while True:
+            chunk = list(
+                itertools.imap(
+                    dict, itertools.islice(it, n)))
+            if not chunk:
+                return
+            yield chunk
 
-    if data:
+    count = 0
+    for data in chunky(row_set.dicts(), 100):
+        count += len(data)
         send_request(data)
 
     logger.info("There should be {n} entries in {res_id}.".format(n=count, res_id=resource['id']))
