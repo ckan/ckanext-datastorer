@@ -66,12 +66,13 @@ def stringify_processor():
                 cell.value = None
             else:
                 cell.value = unicode(cell.value)
-            cell.type = messytables.StringType()
         return row
     return to_string
 
 
 def datetime_procesor():
+    ''' Stringifies dates so that they can be parsed by the db
+    '''
     def datetime_convert(row_set, row):
         for cell in row:
             if isinstance(cell.value, datetime.datetime):
@@ -143,7 +144,8 @@ def _datastorer_upload(context, resource, logger):
         ],
         strict=True
     )
-    row_set.register_processor(types_processor(guessed_types))
+    logger.info('Guessed types: {0}'.format(guessed_types))
+    row_set.register_processor(types_processor(guessed_types, strict=True))
     row_set.register_processor(stringify_processor())
 
     ckan_url = context['site_url'].rstrip('/')
