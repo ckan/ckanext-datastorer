@@ -8,7 +8,7 @@ from ckan.lib.cli import CkanCommand
 from ckan.logic import get_action
 from ckan import model
 from ckan.model.types import make_uuid
-import tasks._datastorer_upload as _datastorer_upload
+import tasks
 import logging
 logger = logging.getLogger()
 
@@ -103,7 +103,7 @@ class Datastorer(CkanCommand):
 
                     if cmd == "update":
                         logger.setLevel(0)
-                        _datastorer_upload(context, resource, logger)
+                        tasks._datastorer_upload(context, resource, logger)
                     elif cmd == "queue":
                         task_id = make_uuid()
                         datastorer_task_status = {
