@@ -41,7 +41,7 @@ class DatastorerException(Exception):
     pass
 
 
-def check_response_and_retry(response, datastore_create_request_url):
+def check_response_and_retry(response, datastore_create_request_url, logger):
     try:
         if not response.status_code:
             raise DatastorerException('Datastore is not reponding at %s with '
@@ -50,8 +50,13 @@ def check_response_and_retry(response, datastore_create_request_url):
         datastorer_upload.retry(exc=e)
 
     if response.status_code not in (201, 200):
+        try:
+            # try logging a json response but ignore it if the content is not json
+            logger.info('JSON response was {0}'.format(json.loads(response.content)))
+        except:
+            pass
         raise DatastorerException('Datastorer bad response code (%s) on %s. Response was %s' %
-                (response.status_code, datastore_create_request_url, response.content))
+                (response.status_code, datastore_create_request_url, response))
 
 
 def stringify_processor():
@@ -156,7 +161,7 @@ def _datastorer_upload(context, resource, logger):
                          headers={'Content-Type': 'application/json',
                                   'Authorization': context['apikey']},
                          )
-        check_response_and_retry(response, datastore_create_request_url)
+        check_response_and_retry(response, datastore_create_request_url, logger)
 
     logger.info('Creating: {0}.'.format(resource['id']))
 
