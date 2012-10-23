@@ -1,6 +1,7 @@
 import json
 import requests
 import datetime
+import itertools
 
 import messytables
 from messytables import (CSVTableSet, XLSTableSet, types_processor,
@@ -40,7 +41,7 @@ class DatastorerException(Exception):
     pass
 
 
-def check_response_and_retry(response, datastore_create_request_url):
+def check_response_and_retry(response, datastore_create_request_url, logger):
     try:
         if not response.status_code:
             raise DatastorerException('Datastore is not reponding at %s with '
@@ -49,6 +50,11 @@ def check_response_and_retry(response, datastore_create_request_url):
         datastorer_upload.retry(exc=e)
 
     if response.status_code not in (201, 200):
+        try:
+            # try logging a json response but ignore it if the content is not json
+            logger.info('JSON response was {0}'.format(json.loads(response.content)))
+        except:
+            pass
         raise DatastorerException('Datastorer bad response code (%s) on %s. Response was %s' %
                 (response.status_code, datastore_create_request_url, response))
 
@@ -60,12 +66,13 @@ def stringify_processor():
                 cell.value = None
             else:
                 cell.value = unicode(cell.value)
-            cell.type = messytables.StringType()
         return row
     return to_string
 
 
 def datetime_procesor():
+    ''' Stringifies dates so that they can be parsed by the db
+    '''
     def datetime_convert(row_set, row):
         for cell in row:
             if isinstance(cell.value, datetime.datetime):
@@ -137,7 +144,8 @@ def _datastorer_upload(context, resource, logger):
         ],
         strict=True
     )
-    row_set.register_processor(types_processor(guessed_types))
+    logger.info('Guessed types: {0}'.format(guessed_types))
+    row_set.register_processor(types_processor(guessed_types, strict=True))
     row_set.register_processor(stringify_processor())
 
     ckan_url = context['site_url'].rstrip('/')
@@ -155,20 +163,25 @@ def _datastorer_upload(context, resource, logger):
                          headers={'Content-Type': 'application/json',
                                   'Authorization': context['apikey']},
                          )
-        check_response_and_retry(response, datastore_create_request_url)
+        check_response_and_retry(response, datastore_create_request_url, logger)
 
     logger.info('Creating: {0}.'.format(resource['id']))
 
-    data = []
-    count = 0
-    for dict_ in row_set.dicts():
-        data.append(dict(dict_))
-        count += 1
-        if len(data) == 100:
-            send_request(data)
-            data[:] = []
+    # generates chunks of data that can be loaded into ckan
+    # n is the maximum size of a chunk
+    def chunky(iterable, n):
+        it = iter(iterable)
+        while True:
+            chunk = list(
+                itertools.imap(
+                    dict, itertools.islice(it, n)))
+            if not chunk:
+                return
+            yield chunk
 
-    if data:
+    count = 0
+    for data in chunky(row_set.dicts(), 100):
+        count += len(data)
         send_request(data)
 
     logger.info("There should be {n} entries in {res_id}.".format(n=count, res_id=resource['id']))

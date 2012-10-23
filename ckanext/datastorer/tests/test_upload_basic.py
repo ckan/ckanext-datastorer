@@ -279,6 +279,28 @@ class TestUploadBasic(object):
                                               {u'type': u'text', u'id': u'Cost Centre Description'},
                                               {u'type': u'float8', u'id': u'Grand Total'}], result['result']['fields']
 
+    def test_bus_stops(self):
+
+        data = {
+            'url': 'http://0.0.0.0:50001/static/bus-stops.csv',
+            'format': 'csv'}
+
+        context = {'site_url': 'http://%s' % self.host,
+                   'apikey': self.api_key,
+                   'site_user_apikey': self.api_key,
+                   }
+
+        resource_id = self.make_resource_id()
+        data['id'] = resource_id
+
+        tasks.datastorer_upload(json.dumps(context), json.dumps(data))
+
+        response = requests.get(
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type": "application/json"})
+
+        result = json.loads(response.content)
+
     def test_long_file(self):
 
         data = {
