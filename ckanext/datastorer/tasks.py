@@ -54,8 +54,8 @@ def check_response_and_retry(response, datastore_create_request_url, logger):
 
     if response.status_code not in (201, 200):
         try:
-            # try logging a json response but ignore it if the content is not json
-            logger.info('JSON response was {0}'.format(json.loads(response.content)))
+            # try logging a json response but ignore it if the content is not json or doesn't have an 'error' key.
+            logger.error('JSON response was {0}'.format(json.loads(response.content)["error"]))
         except:
             pass
         raise DatastorerException('Datastorer bad response code (%s) on %s. Response was %s' %
