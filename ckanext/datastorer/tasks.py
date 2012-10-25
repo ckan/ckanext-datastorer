@@ -117,6 +117,7 @@ def _datastorer_upload(context, resource, logger):
     ##only first sheet in xls for time being
     row_set = table_sets.tables[0]
     offset, headers = headers_guess(row_set.sample)
+    headers = headers_make_unique(headers, max_length=62) # truncate to the max column name length postgres seems to like
     row_set.register_processor(headers_processor(headers))
     row_set.register_processor(offset_processor(offset + 1))
     row_set.register_processor(datetime_procesor())
