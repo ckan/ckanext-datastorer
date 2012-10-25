@@ -4,14 +4,15 @@ import datetime
 import itertools
 
 import messytables
-from messytables import (CSVTableSet, XLSTableSet, types_processor,
-                         headers_guess, headers_processor, type_guess,
-                         offset_processor)
+from messytables import (AnyTableSet, types_processor,
+                         headers_guess, headers_processor, headers_make_unique,
+                         type_guess, offset_processor)
 from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
 
 DATA_FORMATS = [
     'csv',
+    'tsv',
     'text/csv',
     'txt',
     'text/plain',
@@ -22,7 +23,9 @@ DATA_FORMATS = [
     'application/vnd.ms-excel',
     'application/xls',
     'application/octet-stream',
-    'text/comma-separated-values'
+    'text/comma-separated-values',
+    'application/x-zip-compressed',
+    'application/zip',
 ]
 
 
@@ -81,7 +84,6 @@ def datetime_procesor():
         return row
     return datetime_convert
 
-
 @celery.task(name="datastorer.upload", max_retries=24 * 7,
              default_retry_delay=3600)
 def datastorer_upload(context, data):
@@ -104,26 +106,14 @@ def datastorer_upload(context, data):
 
 
 def _datastorer_upload(context, resource, logger):
-
-    excel_types = ['xls', 'application/ms-excel', 'application/xls',
-                   'application/vnd.ms-excel']
-    tsv_types = ['tsv', 'text/tsv', 'text/tab-separated-values']
-
     result = download(context, resource, data_formats=DATA_FORMATS)
 
     content_type = result['headers'].get('content-type', '')\
                                     .split(';', 1)[0]  # remove parameters
 
     f = open(result['saved_file'], 'rb')
-
-    if content_type in excel_types or resource['format'] in excel_types:
-        table_sets = XLSTableSet.from_fileobj(f)
-    else:
-        is_tsv = (content_type in tsv_types or
-                  resource['format'] in tsv_types)
-        delimiter = '\t' if is_tsv else ','
-        table_sets = CSVTableSet.from_fileobj(f, delimiter=delimiter)
-
+    table_sets = AnyTableSet.from_fileobj(f, mimetype=content_type, extension=resource['format'].lower())
+    
     ##only first sheet in xls for time being
     row_set = table_sets.tables[0]
     offset, headers = headers_guess(row_set.sample)
