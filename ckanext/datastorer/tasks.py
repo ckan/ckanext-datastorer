@@ -156,6 +156,20 @@ def _datastorer_upload(context, resource, logger):
                          )
         check_response_and_retry(response, datastore_create_request_url, logger)
 
+    # Delete any existing data before proceeding. Otherwise 'datastore_create' will
+    # append to the existing datastore. And if the fields have significantly changed,
+    # it may also fail.
+    try:
+        logger.info('Deleting existing datastore (it may not exist): {0}.'.format(resource['id']))
+        response = requests.post('%s/api/action/datastore_delete' % (ckan_url),
+                        data=json.dumps({'resource_id': resource['id'],}),
+                         headers={'Content-Type': 'application/json',
+                                  'Authorization': context['apikey']},
+                         )
+        check_response_and_retry(response, datastore_create_request_url, logger)
+    except:
+        pass
+
     logger.info('Creating: {0}.'.format(resource['id']))
 
     # generates chunks of data that can be loaded into ckan
