@@ -44,6 +44,20 @@ class DatastorerException(Exception):
     pass
 
 
+def get_response_error(response):
+    if not response.content:
+        return repr(response)
+
+    try:
+        d = json.loads(response.content)
+    except ValueError:
+        return repr(response) + " <" + response.content + ">"
+
+    if "error" in d:
+        d = d["error"]
+
+    return repr(response) + "\n" + json.dumps(d, sort_keys=True, indent=4) + "\n"
+
 def check_response_and_retry(response, datastore_create_request_url, logger):
     try:
         if not response.status_code:
@@ -53,11 +67,7 @@ def check_response_and_retry(response, datastore_create_request_url, logger):
         datastorer_upload.retry(exc=e)
 
     if response.status_code not in (201, 200):
-        try:
-            # try logging a json response but ignore it if the content is not json or doesn't have an 'error' key.
-            logger.error('JSON response was {0}'.format(json.loads(response.content)["error"]))
-        except:
-            pass
+        logger.error('Response was {0}'.format(get_response_error(response)))
         raise DatastorerException('Datastorer bad response code (%s) on %s. Response was %s' %
                 (response.status_code, datastore_create_request_url, response))
 
@@ -166,9 +176,13 @@ def _datastorer_upload(context, resource, logger):
                          headers={'Content-Type': 'application/json',
                                   'Authorization': context['apikey']},
                          )
-        check_response_and_retry(response, datastore_create_request_url, logger)
-    except:
-        pass
+	if not response.status_code or response.status_code not in (200, 404):
+            # skips 200 (OK) or 404 (datastore does not exist, no need to delete it)
+            logger.error('Deleting existing datastore failed: {0}'.format(get_response_error(response)))
+            raise DatastorerException("Deleting existing datastore failed.")
+    except requests.exceptions.RequestException as e:
+        logger.error('Deleting existing datastore failed: {0}'.format(str(e)))
+        raise DatastorerException("Deleting existing datastore failed.")
 
     logger.info('Creating: {0}.'.format(resource['id']))
 
