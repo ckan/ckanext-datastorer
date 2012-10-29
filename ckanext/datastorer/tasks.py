@@ -4,14 +4,15 @@ import datetime
 import itertools
 
 import messytables
-from messytables import (CSVTableSet, XLSTableSet, types_processor,
-                         headers_guess, headers_processor, type_guess,
-                         offset_processor)
+from messytables import (AnyTableSet, types_processor,
+                         headers_guess, headers_processor, headers_make_unique,
+                         type_guess, offset_processor)
 from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
 
 DATA_FORMATS = [
     'csv',
+    'tsv',
     'text/csv',
     'txt',
     'text/plain',
@@ -22,7 +23,9 @@ DATA_FORMATS = [
     'application/vnd.ms-excel',
     'application/xls',
     'application/octet-stream',
-    'text/comma-separated-values'
+    'text/comma-separated-values',
+    'application/x-zip-compressed',
+    'application/zip',
 ]
 
 
@@ -41,6 +44,20 @@ class DatastorerException(Exception):
     pass
 
 
+def get_response_error(response):
+    if not response.content:
+        return repr(response)
+
+    try:
+        d = json.loads(response.content)
+    except ValueError:
+        return repr(response) + " <" + response.content + ">"
+
+    if "error" in d:
+        d = d["error"]
+
+    return repr(response) + "\n" + json.dumps(d, sort_keys=True, indent=4) + "\n"
+
 def check_response_and_retry(response, datastore_create_request_url, logger):
     try:
         if not response.status_code:
@@ -50,11 +67,7 @@ def check_response_and_retry(response, datastore_create_request_url, logger):
         datastorer_upload.retry(exc=e)
 
     if response.status_code not in (201, 200):
-        try:
-            # try logging a json response but ignore it if the content is not json
-            logger.info('JSON response was {0}'.format(json.loads(response.content)))
-        except:
-            pass
+        logger.error('Response was {0}'.format(get_response_error(response)))
         raise DatastorerException('Datastorer bad response code (%s) on %s. Response was %s' %
                 (response.status_code, datastore_create_request_url, response))
 
@@ -81,7 +94,6 @@ def datetime_procesor():
         return row
     return datetime_convert
 
-
 @celery.task(name="datastorer.upload", max_retries=24 * 7,
              default_retry_delay=3600)
 def datastorer_upload(context, data):
@@ -104,29 +116,18 @@ def datastorer_upload(context, data):
 
 
 def _datastorer_upload(context, resource, logger):
-
-    excel_types = ['xls', 'application/ms-excel', 'application/xls',
-                   'application/vnd.ms-excel']
-    tsv_types = ['tsv', 'text/tsv', 'text/tab-separated-values']
-
     result = download(context, resource, data_formats=DATA_FORMATS)
 
     content_type = result['headers'].get('content-type', '')\
                                     .split(';', 1)[0]  # remove parameters
 
     f = open(result['saved_file'], 'rb')
-
-    if content_type in excel_types or resource['format'] in excel_types:
-        table_sets = XLSTableSet.from_fileobj(f)
-    else:
-        is_tsv = (content_type in tsv_types or
-                  resource['format'] in tsv_types)
-        delimiter = '\t' if is_tsv else ','
-        table_sets = CSVTableSet.from_fileobj(f, delimiter=delimiter)
-
+    table_sets = AnyTableSet.from_fileobj(f, mimetype=content_type, extension=resource['format'].lower())
+    
     ##only first sheet in xls for time being
     row_set = table_sets.tables[0]
     offset, headers = headers_guess(row_set.sample)
+    headers = headers_make_unique(headers, max_length=62) # truncate to the max column name length postgres seems to like
     row_set.register_processor(headers_processor(headers))
     row_set.register_processor(offset_processor(offset + 1))
     row_set.register_processor(datetime_procesor())
@@ -164,6 +165,24 @@ def _datastorer_upload(context, resource, logger):
                                   'Authorization': context['apikey']},
                          )
         check_response_and_retry(response, datastore_create_request_url, logger)
+
+    # Delete any existing data before proceeding. Otherwise 'datastore_create' will
+    # append to the existing datastore. And if the fields have significantly changed,
+    # it may also fail.
+    try:
+        logger.info('Deleting existing datastore (it may not exist): {0}.'.format(resource['id']))
+        response = requests.post('%s/api/action/datastore_delete' % (ckan_url),
+                        data=json.dumps({'resource_id': resource['id'],}),
+                         headers={'Content-Type': 'application/json',
+                                  'Authorization': context['apikey']},
+                         )
+	if not response.status_code or response.status_code not in (200, 404):
+            # skips 200 (OK) or 404 (datastore does not exist, no need to delete it)
+            logger.error('Deleting existing datastore failed: {0}'.format(get_response_error(response)))
+            raise DatastorerException("Deleting existing datastore failed.")
+    except requests.exceptions.RequestException as e:
+        logger.error('Deleting existing datastore failed: {0}'.format(str(e)))
+        raise DatastorerException("Deleting existing datastore failed.")
 
     logger.info('Creating: {0}.'.format(resource['id']))
 
