@@ -104,7 +104,6 @@ def datastorer_upload(context, data):
 
 
 def _datastorer_upload(context, resource, logger):
-
     excel_types = ['xls', 'application/ms-excel', 'application/xls',
                    'application/vnd.ms-excel']
     tsv_types = ['tsv', 'text/tsv', 'text/tab-separated-values']
@@ -188,16 +187,14 @@ def _datastorer_upload(context, resource, logger):
 
     ckan_request_url = ckan_url + '/api/action/resource_update'
 
-    ckan_resource_data = {
-        'id': resource["id"],
+    resource.update({
         'webstore_url': 'active',
-        'webstore_last_updated': datetime.datetime.now().isoformat(),
-        'url': resource['url']
-    }
+        'webstore_last_updated': datetime.datetime.now().isoformat()
+    })
 
     response = requests.post(
         ckan_request_url,
-        data=json.dumps(ckan_resource_data),
+        data=json.dumps(resource),
         headers={'Content-Type': 'application/json',
                  'Authorization': context['apikey']})
 
