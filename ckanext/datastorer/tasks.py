@@ -120,7 +120,7 @@ def _datastorer_upload(context, resource, logger):
     else:
         is_tsv = (content_type in tsv_types or
                   resource['format'] in tsv_types)
-        delimiter = '\t' if is_tsv else ','
+        delimiter = '\t' if is_tsv else None
         table_sets = CSVTableSet.from_fileobj(f, delimiter=delimiter)
 
     ##only first sheet in xls for time being
