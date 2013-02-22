@@ -38,8 +38,7 @@ class Datastorer(CkanCommand):
         while True:
             response = requests.post(api_url +
                                      '/current_package_list_with_resources',
-                                     '{"page": %d, "limit": %d}' %
-                                     (page, self.MAX_PER_PAGE),
+                                     {"page": page, "limit": self.MAX_PER_PAGE},
                                      headers=headers)
             packages = json.loads(response.content).get('result')
             if not packages:
