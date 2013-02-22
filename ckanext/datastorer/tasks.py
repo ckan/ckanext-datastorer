@@ -3,12 +3,17 @@ import requests
 import datetime
 import itertools
 
+import locale
+
 import messytables
 from messytables import (CSVTableSet, XLSTableSet, types_processor,
                          headers_guess, headers_processor, type_guess,
                          offset_processor)
 from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
+
+if not locale.getlocale()[0]:
+    locale.setlocale(locale.LC_ALL, '')
 
 DATA_FORMATS = [
     'csv',
