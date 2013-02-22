@@ -31,6 +31,21 @@ class Datastorer(CkanCommand):
     usage = __doc__
     min_args = 1
     max_args = 2
+    MAX_PER_PAGE = 50
+
+    def _get_all_packages(self, api_url, headers):
+        page = 1
+        while True:
+            response = requests.post(api_url +
+                                     '/current_package_list_with_resources',
+                                     {"page": page, "limit": self.MAX_PER_PAGE},
+                                     headers=headers)
+            packages = json.loads(response.content).get('result')
+            if not packages:
+                raise StopIteration
+            for package in packages:
+                yield package
+            page += 1
 
     def command(self):
         """
@@ -62,7 +77,6 @@ class Datastorer(CkanCommand):
             headers = {
                 'content-type:': 'application/json'
             }
-
             if len(self.args) == 2:
                 response = requests.post(api_url +
                                          '/package_show',
@@ -75,12 +89,8 @@ class Datastorer(CkanCommand):
                 else:
                     logger.error('Error getting dataset %s' % self.args[1])
                     sys.exit(1)
-
             else:
-                response = requests.post(api_url +
-                                         '/current_package_list_with_resources',
-                                         "{}", headers=headers)
-                packages = json.loads(response.content).get('result')
+                packages = self._get_all_packages(api_url, headers)
 
             for package in packages:
                 for resource in package.get('resources', []):
