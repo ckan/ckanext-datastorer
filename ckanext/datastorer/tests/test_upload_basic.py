@@ -41,7 +41,6 @@ class TestUploadBasic(object):
         cls.static_files_server = subprocess.Popen(
             ['python', static_files_server])
 
-
         #make sure services are running
         for i in range(0, 50):
             time.sleep(0.1)
@@ -91,6 +90,35 @@ class TestUploadBasic(object):
     def test_csv_file(self):
 
         data = {'url': 'http://0.0.0.0:50001/static/simple.csv',
+                'format': 'csv',
+                'id': 'uuid1'}
+
+        context = {'site_url': 'http://%s' % self.host,
+                   'site_user_apikey': self.api_key,
+                   'apikey': self.api_key}
+
+        resource_id = self.make_resource_id()
+        data['id'] = resource_id
+
+        tasks.datastorer_upload(json.dumps(context), json.dumps(data))
+
+        response = requests.get(
+            'http://%s/api/action/datastore_search?resource_id=%s' % (self.host, resource_id),
+             headers={"content-type": "application/json"})
+
+        result = json.loads(response.content)
+
+        value = result['result']['records'][0][u'temperature']
+        assert int(value) == 1, value
+        assert result['result']['total'] == 6, (result['result']['total'], resource_id)
+        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+                                              {u'type': u'timestamp', u'id': u'date'},
+                                              {u'type': u'numeric', u'id': u'temperature'},
+                                              {u'type': u'text', u'id': u'place'}], result['result']['fields']
+
+    def test_ssv_file(self):
+
+        data = {'url': 'http://0.0.0.0:50001/static/simple.ssv',
                 'format': 'csv',
                 'id': 'uuid1'}
 
@@ -266,8 +294,10 @@ class TestUploadBasic(object):
         assert value == 'ALBANY OFFICE FURNITURE SOLUTIONS', value
         assert result['result']['total'] == 230, (result['result']['total'], resource_id)
         assert len(result['result']['records']) == 100
+        value = result['result']['records'][65][u'Supplier Name']
+        assert_equal(value, 'CAREWATCH (NEWCASTLE UPON TYNE)')
 
-        assert result['result']['fields'] == [{u'type': u'int4', u'id': u'_id'},
+        assert_equal(result['result']['fields'], [{u'type': u'int4', u'id': u'_id'},
                                               {u'type': u'text', u'id': u'Directorate'},
                                               {u'type': u'text', u'id': u'Service Area'},
                                               {u'type': u'text', u'id': u'Expenditure Category'},
@@ -277,7 +307,7 @@ class TestUploadBasic(object):
                                               {u'type': u'text', u'id': u'Capital/ Revenue'},
                                               {u'type': u'text', u'id': u'Cost Centre'},
                                               {u'type': u'text', u'id': u'Cost Centre Description'},
-                                              {u'type': u'float8', u'id': u'Grand Total'}], result['result']['fields']
+                                              {u'type': u'float8', u'id': u'Grand Total'}])
 
     def test_bus_stops(self):
 
