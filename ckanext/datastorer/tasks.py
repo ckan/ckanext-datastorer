@@ -120,7 +120,24 @@ def datastorer_upload(context, data):
 
 
 def _datastorer_upload(context, resource, logger):
-    result = download(context, resource, data_formats=DATA_FORMATS)
+    from ckanext.archiver.tasks import ChooseNotToDownload
+    from time import sleep
+
+    max_retries = 5
+    for i in range(max_retries):
+        try:
+            result = download(context, resource, data_formats=DATA_FORMATS)
+        except ChooseNotToDownload:
+            raise
+        except Exception, e:
+            if i < max_retries:
+                logger.error("Error while performing download: %r. Retrying...", e)
+                sleep(5 * i)
+                continue
+            else:
+                raise
+        else:
+            break
 
     content_type = result['headers'].get('content-type', '')\
                                     .split(';', 1)[0]  # remove parameters
