@@ -101,9 +101,9 @@ class Datastorer(CkanCommand):
                     if resource.get('datastore_active'):
                         continue
                     mimetype = resource['mimetype']
-                    if mimetype and (mimetype not in tasks.DATA_FORMATS
-                                     or resource['format'].lower() not in
-                                     tasks.DATA_FORMATS):
+                    if mimetype and not(mimetype in tasks.DATA_FORMATS or
+                                        resource['format'].lower() in
+                                        tasks.DATA_FORMATS):
                         logger.warn('Skipping resource %s from package %s because MIME type %s or format %s is unrecognized'
                               % (resource['url'], package['name'], mimetype, resource['format']))
                         continue
