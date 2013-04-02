@@ -11,7 +11,7 @@ from messytables import (AnyTableSet, types_processor,
                          type_guess, offset_processor)
 from ckanext.archiver.tasks import download, update_task_status
 from ckan.lib.celery_app import celery
-from common.py import DATA_FORMATS, TYPE_MAPPING
+from common import DATA_FORMATS, TYPE_MAPPING
 
 if not locale.getlocale()[0]:
     locale.setlocale(locale.LC_ALL, '')
