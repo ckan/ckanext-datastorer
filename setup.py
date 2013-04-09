@@ -24,7 +24,7 @@ setup(
     entry_points="""
     [paste.paster_command]
     datastorer = ckanext.datastorer.commands:Datastorer
-    datastore_upload = ckanext.sa.commands:AddToDataStore
+    datastore_upload = ckanext.datastorer.commands:AddToDataStore
 
     [ckan.plugins]
     datastorer = ckanext.datastorer.plugin:DatastorerPlugin
