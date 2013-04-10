@@ -323,7 +323,7 @@ class AddToDataStore(CkanCommand):
 
         resource.update({
             'webstore_url': 'active',
-            'webstore_last_updated': datetime.datetime.now().isoformat()
+            'webstore_last_updated': datetime.now().isoformat()
         })
 
         logic.get_action('resource_update')(context, resource)
@@ -345,7 +345,7 @@ def datetime_procesor():
     '''
     def datetime_convert(row_set, row):
         for cell in row:
-            if isinstance(cell.value, datetime.datetime):
+            if isinstance(cell.value, datetime):
                 cell.value = cell.value.isoformat()
                 cell.type = messytables.StringType()
         return row
