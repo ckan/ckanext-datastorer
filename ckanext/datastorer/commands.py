@@ -238,11 +238,15 @@ class AddToDataStore(CkanCommand):
                                         .split(';', 1)[0]  # remove parameters
 
         f = open(result['saved_file'], 'rb')
-        table_sets = AnyTableSet.from_fileobj(
-            f,
-            mimetype=content_type,
-            extension=resource['format'].lower()
-        )
+        try:
+            table_sets = AnyTableSet.from_fileobj(
+                f,
+                mimetype=content_type,
+                extension=resource['format'].lower()
+            )
+        except Exception as e:
+            logger.exception(e)
+            return
 
         ##only first sheet in xls for time being
         row_set = table_sets.tables[0]
@@ -278,11 +282,15 @@ class AddToDataStore(CkanCommand):
                            in zip(headers, guessed_type_names)],
                 'records': data
             }
-            response = logic.get_action('datastore_create')(
-                context,
-                data_dict
-            )
-            return response
+            try:
+                response = logic.get_action('datastore_create')(
+                    context,
+                    data_dict
+                )
+            except Exception as e:
+                logger.exception(e)
+                    return
+                return response
 
         # Delete any existing data before proceeding. Otherwise
         # 'datastore_create' will append to the existing datastore. And if the
