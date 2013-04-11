@@ -13,6 +13,7 @@ DATA_FORMATS = [
     'application/vnd.ms-excel',
     'application/xls',
     'application/octet-stream',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'text/comma-separated-values',
     'application/x-zip-compressed',
     'application/zip',
