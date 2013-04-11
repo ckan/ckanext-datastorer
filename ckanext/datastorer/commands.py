@@ -168,6 +168,8 @@ class AddToDataStore(CkanCommand):
     MAX_PER_PAGE = 50
     max_content_length = int(config.get('ckanext-archiver.max_content_length',
                              50000000))
+    CkanCommand.parser.add_option('-i', '--ignore', dest="ignore", action="append",
+                      help="ID of a resource to ignore")
 
     def _get_all_packages(self):
         page = 1
@@ -217,6 +219,9 @@ class AddToDataStore(CkanCommand):
                                                       package['name'],
                                                       mimetype,
                                                       resource['format']))
+                    continue
+                if resource in self.options.ignore:
+                    logger.warn('Ignoring resource {0}'.format(resource['id']))
                     continue
                 logger.info('Datastore resource from resource {0} from '
                             'package {0}'.format(resource['url'],
