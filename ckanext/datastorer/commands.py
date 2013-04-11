@@ -289,8 +289,8 @@ class AddToDataStore(CkanCommand):
                 )
             except Exception as e:
                 logger.exception(e)
-                    return
-                return response
+                return
+            return response
 
         # Delete any existing data before proceeding. Otherwise
         # 'datastore_create' will append to the existing datastore. And if the
