@@ -168,6 +168,8 @@ class AddToDataStore(CkanCommand):
     MAX_PER_PAGE = 50
     max_content_length = int(config.get('ckanext-archiver.max_content_length',
                              50000000))
+    CkanCommand.parser.add_option('-i', '--ignore', dest="ignore", action="append",
+                      help="ID of a resource to ignore")
 
     def _get_all_packages(self):
         page = 1
@@ -218,6 +220,9 @@ class AddToDataStore(CkanCommand):
                                                       mimetype,
                                                       resource['format']))
                     continue
+                if resource in self.options.ignore:
+                    logger.warn('Ignoring resource {0}'.format(resource['id']))
+                    continue
                 logger.info('Datastore resource from resource {0} from '
                             'package {0}'.format(resource['url'],
                                                  package['name']))
@@ -238,11 +243,15 @@ class AddToDataStore(CkanCommand):
                                         .split(';', 1)[0]  # remove parameters
 
         f = open(result['saved_file'], 'rb')
-        table_sets = AnyTableSet.from_fileobj(
-            f,
-            mimetype=content_type,
-            extension=resource['format'].lower()
-        )
+        try:
+            table_sets = AnyTableSet.from_fileobj(
+                f,
+                mimetype=content_type,
+                extension=resource['format'].lower()
+            )
+        except Exception as e:
+            logger.exception(e)
+            return
 
         ##only first sheet in xls for time being
         row_set = table_sets.tables[0]
@@ -278,10 +287,14 @@ class AddToDataStore(CkanCommand):
                            in zip(headers, guessed_type_names)],
                 'records': data
             }
-            response = logic.get_action('datastore_create')(
-                context,
-                data_dict
-            )
+            try:
+                response = logic.get_action('datastore_create')(
+                    context,
+                    data_dict
+                )
+            except Exception as e:
+                logger.exception(e)
+                return
             return response
 
         # Delete any existing data before proceeding. Otherwise
@@ -323,7 +336,7 @@ class AddToDataStore(CkanCommand):
 
         resource.update({
             'webstore_url': 'active',
-            'webstore_last_updated': datetime.datetime.now().isoformat()
+            'webstore_last_updated': datetime.now().isoformat()
         })
 
         logic.get_action('resource_update')(context, resource)
@@ -345,7 +358,7 @@ def datetime_procesor():
     '''
     def datetime_convert(row_set, row):
         for cell in row:
-            if isinstance(cell.value, datetime.datetime):
+            if isinstance(cell.value, datetime):
                 cell.value = cell.value.isoformat()
                 cell.type = messytables.StringType()
         return row
