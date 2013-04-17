@@ -9,7 +9,6 @@ import requests
 import urlparse
 from pylons import config
 from ckan.lib.cli import CkanCommand
-import ckan.logic as logic
 from ckan.logic import get_action
 from ckan import model
 from ckan.model.types import make_uuid
@@ -183,8 +182,8 @@ class AddToDataStore(CkanCommand):
                 'page': page,
                 'limit': self.MAX_PER_PAGE,
             }
-            packages = logic.get_action('current_package_list_with_resources')(
-                context, data_dict)
+            packages = toolkit.get_action(
+                'current_package_list_with_resources')(context, data_dict)
             if not packages:
                 raise StopIteration
             for package in packages:
@@ -300,7 +299,7 @@ class AddToDataStore(CkanCommand):
                 'records': data
             }
             try:
-                response = logic.get_action('datastore_create')(
+                response = toolkit.get_action('datastore_create')(
                     context,
                     data_dict
                 )
@@ -315,7 +314,7 @@ class AddToDataStore(CkanCommand):
         logger.info('Deleting existing datastore (it may not exist): '
                     '{0}.'.format(resource['id']))
         try:
-            logic.get_action('datastore_delete')(
+            toolkit.get_action('datastore_delete')(
                 context,
                 {'resource_id': resource['id']}
             )
@@ -351,7 +350,7 @@ class AddToDataStore(CkanCommand):
             'webstore_last_updated': datetime.now().isoformat()
         })
 
-        logic.get_action('resource_update')(context, resource)
+        toolkit.get_action('resource_update')(context, resource)
 
 
 def stringify_processor():
