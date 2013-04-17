@@ -13,6 +13,7 @@ import ckan.logic as logic
 from ckan.logic import get_action
 from ckan import model
 from ckan.model.types import make_uuid
+import ckan.plugins.toolkit as toolkit
 from common import DATA_FORMATS, TYPE_MAPPING
 from fetch_resource import download
 import logging
@@ -199,15 +200,24 @@ class AddToDataStore(CkanCommand):
             return
 
         self._load_config()
-        user = logic.get_action('get_site_user')({'model': model,
-                                                 'ignore_auth': True}, {})
-        packages = self._get_all_packages()
-        context = {
-            'username': user.get('name'),
-            'user': user.get('name'),
-            'model': model
+        user = toolkit.get_action('get_site_user')({'model': model,
+                                                    'ignore_auth': True}, {})
+        context = {'username': user.get('name'),
+                   'user': user.get('name'),
+                   'model': model}
 
-        }
+        if len(self.args) == 1:
+            data_dict = {'id': self.args[0]}
+            try:
+                packages = [
+                    toolkit.get_action('package_show')(context, data_dict)
+                ]
+            except toolkit.ObjectNotFound:
+                logger.error('Dataset %s not found' % self.args[0])
+                sys.exit(1)
+        else:
+            packages = self._get_all_packages()
+
         for package in packages:
             for resource in package.get('resources', []):
                 mimetype = resource['mimetype']
