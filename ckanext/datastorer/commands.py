@@ -328,9 +328,10 @@ class AddToDataStore(CkanCommand):
                 context,
                 {'resource_id': resource['id']}
             )
+        except toolkit.ObjectNotFound:
+            pass
         except Exception as e:
             logger.exception(e)
-
         logger.info('Creating: {0}.'.format(resource['id']))
 
         # generates chunks of data that can be loaded into ckan
