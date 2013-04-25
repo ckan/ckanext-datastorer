@@ -4,9 +4,31 @@ CKAN Datastorer Extension
 The CKAN Datastorer Extension provides a Celery task for automatically
  saving CKAN resources that link to csv and excel files into the datastore.
 
+Installation without celery
+---------------------------
 
-Installation
-------------
+After activating your pyenv, install the sources via pip::
+
+    $ (pyenv) pip install -e git+git://github.com/okfn/ckanext-datastorer.git#egg=ckanext-datastorer
+
+Install the requirements::
+
+    $ (pyenv) pip install -r ckanext-datastorer/pip-requirements.txt
+
+Paster Command
+--------------
+
+A paster command is available, that lets you archive all resources or just
+those belonging to a specific package without celery. This paster command also
+lets you ignore certain resources if they are known to fail or cause problems.
+The command is as follows::
+
+	paster datastore_upload [package-id] -i/--ignore [package-id]
+
+It is recommended to run this command in a cron every hour.
+
+Installation with celery
+------------------------
 
 After activating your pyenv, install the sources via pip::
 
