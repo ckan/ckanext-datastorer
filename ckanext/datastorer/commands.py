@@ -158,7 +158,7 @@ class AddToDataStore(CkanCommand):
 
     Usage:
 
-    paster datastore_upload
+    paster datastore_upload [package-id] -i/--ignore [package-id]
             - Update all resources.
     """
     summary = __doc__.split('\n')[0]
