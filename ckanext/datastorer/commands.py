@@ -256,21 +256,22 @@ class AddToDataStore(CkanCommand):
             logger.info(
                 'Skipping unmodified resource: {0}'.format(resource['url'])
             )
-            return
+            return {'success': True,
+                    'resource': resource['id'],
+                    'error': None}
         except Exception as e:
             logger.exception(e)
-            status = {
-                'success': False,
-                'resource': resource['id'],
-                'error': 'Could not download resource',
-            }
-            return status
+            return {'success': False,
+                    'resource': resource['id'],
+                    'error': 'Could not download resource'}
 
         if result['hash'] == original_hash:
             logger.info(
                 'Skipping unmodified resource: {0}'.format(resource['url'])
             )
-            return
+            return {'success': True,
+                    'resource': resource['id'],
+                    'error': None}
 
         content_type = result['headers'].get('content-type', '')\
                                         .split(';', 1)[0]  # remove parameters
@@ -284,12 +285,9 @@ class AddToDataStore(CkanCommand):
             )
         except Exception as e:
             logger.exception(e)
-            status = {
-                'success': False,
-                'resource': resource['id'],
-                'error': 'Error parsing the resource',
-            }
-            return status
+            return {'success': False,
+                    'resource': resource['id'],
+                    'error': 'Error parsing the resource'}
 
         # only first sheet in xls for time being
         row_set = table_sets.tables[0]
@@ -368,12 +366,9 @@ class AddToDataStore(CkanCommand):
                 send_request(data)
         except Exception as e:
             logger.exception(e)
-            status = {
-                'success': False,
-                'resource': resource['id'],
-                'error': 'Error pushing data to datastore',
-            }
-            return status
+            return {'success': False,
+                    'resource': resource['id'],
+                    'error': 'Error pushing data to datastore'}
 
         logger.info("There should be {n} entries in {res_id}.".format(
             n=count,
@@ -386,12 +381,9 @@ class AddToDataStore(CkanCommand):
         })
 
         toolkit.get_action('resource_update')(context, resource)
-        status = {
-            'success': True,
-            'resource': resource['id'],
-            'error': None,
-        }
-        return status
+        return {'success': True,
+                'resource': resource['id'],
+                'error': None}
 
 
 def stringify_processor():
