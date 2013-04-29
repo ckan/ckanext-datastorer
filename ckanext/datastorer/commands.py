@@ -321,17 +321,19 @@ class AddToDataStore(CkanCommand):
         # Delete any existing data before proceeding. Otherwise
         # 'datastore_create' will append to the existing datastore. And if the
         # fields have significantly changed, it may also fail.
-        logger.info('Deleting existing datastore (it may not exist): '
-                    '{0}.'.format(resource['id']))
+        logger.info('Trying to delete existing datastore for resource {0} '
+                    '(may not exist).'.format(resource['id']))
         try:
             toolkit.get_action('datastore_delete')(
                 context,
                 {'resource_id': resource['id']}
             )
         except toolkit.ObjectNotFound:
-            pass
+            logger.info('Datastore not found for resource {0}.'.format(
+                resource['id']))
         except Exception as e:
             logger.exception(e)
+
         logger.info('Creating: {0}.'.format(resource['id']))
 
         # generates chunks of data that can be loaded into ckan
