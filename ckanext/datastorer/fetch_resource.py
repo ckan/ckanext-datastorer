@@ -8,6 +8,7 @@ import requests
 import tempfile
 import urllib
 import urlparse
+import dateutil.parser
 import ckan.logic as logic
 
 
@@ -28,6 +29,10 @@ class DownloadError(Exception):
 
 
 class ChooseNotToDownload(Exception):
+    pass
+
+
+class ResourceNotModified(Exception):
     pass
 
 
@@ -56,7 +61,7 @@ def _clean_content_type(ct):
 
 
 def download(context, resource, max_content_length, data_formats,
-             url_timeout=30):
+             url_timeout=30, check_modified=False):
     '''Given a resource, tries to download it.
 
     If the size or format is not acceptable for download then
@@ -79,6 +84,20 @@ def download(context, resource, max_content_length, data_formats,
     })
 
     headers = json.loads(link_checker(link_context, link_data))
+
+    # check to see if remote resource has been modified since the CKAN
+    # resource was last updated
+    #
+    # note: checks by day (ignoring times and timezones)
+    if check_modified:
+        resource_last_mod = resource.get('last_modified')
+        remote_last_mod = headers.get('last-modified')
+        if remote_last_mod and resource_last_mod:
+            resource_last_mod = dateutil.parser.parse(resource_last_mod)
+            remote_last_mod = dateutil.parser.parse(remote_last_mod)
+            if remote_last_mod.date() <= resource_last_mod.date():
+                raise ResourceNotModified(
+                    'Resource {0} not modified'.format(resource['id']))
 
     resource_format = resource['format'].lower()
     ct = _clean_content_type(headers.get('content-type', '').lower())

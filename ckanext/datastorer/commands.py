@@ -14,7 +14,7 @@ from ckan import model
 from ckan.model.types import make_uuid
 import ckan.plugins.toolkit as toolkit
 from common import DATA_FORMATS, TYPE_MAPPING
-from fetch_resource import download
+import fetch_resource
 import logging
 logger = logging.getLogger()
 
@@ -240,16 +240,29 @@ class AddToDataStore(CkanCommand):
                 self.push_to_datastore(context, resource)
 
     def push_to_datastore(self, context, resource):
+        original_hash = resource.get('hash')
+
         try:
-            result = download(
-                context,
-                resource,
-                self.max_content_length,
-                DATA_FORMATS
+            result = fetch_resource.download(context,
+                                             resource,
+                                             self.max_content_length,
+                                             DATA_FORMATS,
+                                             check_modified=True)
+        except fetch_resource.ResourceNotModified as e:
+            logger.info(
+                'Skipping unmodified resource: {0}'.format(resource['url'])
             )
+            return
         except Exception as e:
             logger.exception(e)
             return
+
+        if result['hash'] == original_hash:
+            logger.info(
+                'Skipping unmodified resource: {0}'.format(resource['url'])
+            )
+            return
+
         content_type = result['headers'].get('content-type', '')\
                                         .split(';', 1)[0]  # remove parameters
 
@@ -264,7 +277,7 @@ class AddToDataStore(CkanCommand):
             logger.exception(e)
             return
 
-        ##only first sheet in xls for time being
+        # only first sheet in xls for time being
         row_set = table_sets.tables[0]
         offset, headers = headers_guess(row_set.sample)
         row_set.register_processor(headers_processor(headers))
