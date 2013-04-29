@@ -217,6 +217,7 @@ class AddToDataStore(CkanCommand):
         else:
             packages = self._get_all_packages()
 
+        resource_status = []
         for package in packages:
             for resource in package.get('resources', []):
                 mimetype = resource['mimetype']
@@ -237,7 +238,10 @@ class AddToDataStore(CkanCommand):
                 logger.info('Datastore resource from resource {0} from '
                             'package {0}'.format(resource['url'],
                                                  package['name']))
-                self.push_to_datastore(context, resource)
+                status = self.push_to_datastore(context, resource)
+                if status['success'] is False:
+                    resource_status.append(status)
+        print resource_status
 
     def push_to_datastore(self, context, resource):
         try:
@@ -249,7 +253,12 @@ class AddToDataStore(CkanCommand):
             )
         except Exception as e:
             logger.exception(e)
-            return
+            status = {
+                'success': False,
+                'resource': resource['id'],
+                'error': 'Could not download resource',
+            }
+            return status
         content_type = result['headers'].get('content-type', '')\
                                         .split(';', 1)[0]  # remove parameters
 
@@ -262,7 +271,12 @@ class AddToDataStore(CkanCommand):
             )
         except Exception as e:
             logger.exception(e)
-            return
+            status = {
+                'success': False,
+                'resource': resource['id'],
+                'error': 'Error parsing the resource',
+            }
+            return status
 
         ##only first sheet in xls for time being
         row_set = table_sets.tables[0]
@@ -298,26 +312,25 @@ class AddToDataStore(CkanCommand):
                            in zip(headers, guessed_type_names)],
                 'records': data
             }
-            try:
-                response = toolkit.get_action('datastore_create')(
-                    context,
-                    data_dict
-                )
-            except Exception as e:
-                logger.exception(e)
-                return
+            response = toolkit.get_action('datastore_create')(
+                context,
+                data_dict
+            )
             return response
 
         # Delete any existing data before proceeding. Otherwise
         # 'datastore_create' will append to the existing datastore. And if the
         # fields have significantly changed, it may also fail.
-        logger.info('Deleting existing datastore (it may not exist): '
-                    '{0}.'.format(resource['id']))
+        logger.info('Trying to delete existing datastore for resource {0} '
+                    '(may not exist).'.format(resource['id']))
         try:
             toolkit.get_action('datastore_delete')(
                 context,
                 {'resource_id': resource['id']}
             )
+        except toolkit.ObjectNotFound:
+            logger.info('Datastore not found for resource {0}.'.format(
+                resource['id']))
         except Exception as e:
             logger.exception(e)
 
@@ -336,9 +349,18 @@ class AddToDataStore(CkanCommand):
                 yield chunk
 
         count = 0
-        for data in chunky(row_set.dicts(), 100):
-            count += len(data)
-            send_request(data)
+        try:
+            for data in chunky(row_set.dicts(), 100):
+                count += len(data)
+                send_request(data)
+        except Exception as e:
+            logger.exception(e)
+            status = {
+                'success': False,
+                'resource': resource['id'],
+                'error': 'Error pushing data to datastore',
+            }
+            return status
 
         logger.info("There should be {n} entries in {res_id}.".format(
             n=count,
@@ -351,6 +373,12 @@ class AddToDataStore(CkanCommand):
         })
 
         toolkit.get_action('resource_update')(context, resource)
+        status = {
+            'success': True,
+            'resource': resource['id'],
+            'error': None,
+        }
+        return status
 
 
 def stringify_processor():
