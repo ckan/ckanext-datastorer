@@ -6,7 +6,7 @@ import itertools
 import locale
 
 import messytables
-from messytables import (AnyTableSet, types_processor,
+from messytables import (any_tableset, types_processor,
                          headers_guess, headers_processor, headers_make_unique,
                          type_guess, offset_processor)
 from ckanext.archiver.tasks import download, update_task_status
@@ -98,7 +98,7 @@ def _datastorer_upload(context, resource, logger):
                                     .split(';', 1)[0]  # remove parameters
 
     f = open(result['saved_file'], 'rb')
-    table_sets = AnyTableSet.from_fileobj(f, mimetype=content_type, extension=resource['format'].lower())
+    table_sets = any_tableset(f, mimetype=content_type, extension=resource['format'].lower())
 
     ##only first sheet in xls for time being
     row_set = table_sets.tables[0]
