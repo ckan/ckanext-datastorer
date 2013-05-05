@@ -3,7 +3,7 @@ from datetime import datetime
 import itertools
 import json
 import messytables
-from messytables import (AnyTableSet, types_processor, headers_guess,
+from messytables import (any_tableset, types_processor, headers_guess,
                          headers_processor, type_guess, offset_processor)
 import requests
 import urlparse
@@ -278,7 +278,7 @@ class AddToDataStore(CkanCommand):
 
         f = open(result['saved_file'], 'rb')
         try:
-            table_sets = AnyTableSet.from_fileobj(
+            table_sets = any_tableset(
                 f,
                 mimetype=content_type,
                 extension=resource['format'].lower()
