@@ -248,9 +248,7 @@ class AddToDataStore(CkanCommand):
 
     def push_to_datastore(self, context, resource):
         original_hash = resource.get('hash')
-        check_hash = True
-        if self.options.force:
-            check_hash = False
+        check_hash = not self.options.force
 
         try:
             result = fetch_resource.download(context,
