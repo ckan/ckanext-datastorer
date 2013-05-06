@@ -171,6 +171,9 @@ class AddToDataStore(CkanCommand):
     CkanCommand.parser.add_option('-i', '--ignore', dest="ignore",
                                   action="append",
                                   help="ID of a resource to ignore")
+    CkanCommand.parser.add_option('--no-hash', dest="force",
+                                  action="store_true",
+                                  help="Do not check hashes")
 
     def _get_all_packages(self):
         page = 1
@@ -245,13 +248,14 @@ class AddToDataStore(CkanCommand):
 
     def push_to_datastore(self, context, resource):
         original_hash = resource.get('hash')
+        check_hash = not self.options.force
 
         try:
             result = fetch_resource.download(context,
                                              resource,
                                              self.max_content_length,
                                              DATA_FORMATS,
-                                             check_modified=True)
+                                             check_modified=check_hash)
         except fetch_resource.ResourceNotModified as e:
             logger.info(
                 'Skipping unmodified resource: {0}'.format(resource['url'])
@@ -265,7 +269,7 @@ class AddToDataStore(CkanCommand):
                     'resource': resource['id'],
                     'error': 'Could not download resource'}
 
-        if result['hash'] == original_hash:
+        if check_hash and (result['hash'] == original_hash):
             logger.info(
                 'Skipping unmodified resource: {0}'.format(resource['url'])
             )
