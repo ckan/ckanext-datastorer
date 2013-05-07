@@ -20,12 +20,17 @@ Paster Command
 
 A paster command is available, that lets you archive all resources or just
 those belonging to a specific package without celery. This paster command also
-lets you ignore certain resources if they are known to fail or cause problems.
+lets you ignore certain resources if they are known to fail or cause problems
+The last-modified header is checked for a date greater than 1 day before
+downloading a resource and hashes checked before uploading to the datastore.
 The command is as follows::
 
-	paster datastore_upload [package-id] -i/--ignore [package-id]
+	paster datastore_upload [package-id] -i/--ignore [package-id] --no-hash
 
 It is recommended to run this command in a cron every hour.
+
+	@hourly /usr/lib/ckan/default/bin/paster --plugin=ckanext_datastorer
+    datastore_upload -c /etc/ckan/default/production.ini -h &> /tmp/update_datastore
 
 Installation with celery
 ------------------------
