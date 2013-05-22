@@ -1,4 +1,4 @@
-messytables==0.8
+messytables==0.10
 -e git+https://github.com/okfn/ckanext-archiver.git#egg=ckanext-archiver
 celery==2.4.2
 kombu==2.1.3
