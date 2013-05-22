@@ -169,7 +169,7 @@ class Datastorer(CkanCommand):
                             'job_id': response['job_id'],
                             'job_key': response['job_key']
                         }
-                        logger.warn('Successfully submitted job. Got id %s.' % response['job_id'])
+                        logger.warn('Submitted job. Got id %s.' % response['job_id'])
                         datastorer_task_status = {
                             'entity_id': resource['id'],
                             'entity_type': u'resource',
