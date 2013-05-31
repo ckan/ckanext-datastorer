@@ -27,10 +27,9 @@ The command is as follows::
 
 	paster datastore_upload [package-id] -i/--ignore [package-id] --no-hash
 
-It is recommended to run this command in a cron every hour.
+It is recommended to run this command in a cron every hour::
 
-	@hourly /usr/lib/ckan/default/bin/paster --plugin=ckanext_datastorer
-    datastore_upload -c /etc/ckan/default/production.ini -h &> /tmp/update_datastore
+	@hourly /usr/lib/ckan/default/bin/paster --plugin=ckanext_datastorer datastore_upload -c /etc/ckan/default/production.ini &> /tmp/update_datastore
 
 Installation with celery
 ------------------------
@@ -56,7 +55,7 @@ The simplest way to do this is to install supervisor::
 
     apt-get install supervisor
 
-You can use this file as a template and add it to /etc/supservisor/conf.d:
+You can use this file as a template and add it to /etc/supservisor/conf.d::
 
     https://github.com/okfn/ckan/blob/master/ckan/config/celery-supervisor.conf
 
