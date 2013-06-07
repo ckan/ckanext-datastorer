@@ -8,7 +8,6 @@ import requests
 import tempfile
 import urllib
 import urlparse
-import dateutil.parser
 import ckan.logic as logic
 
 
@@ -88,16 +87,28 @@ def download(context, resource, max_content_length, data_formats,
     # check to see if remote resource has been modified since the CKAN
     # resource was last updated
     #
-    # note: checks by day (ignoring times and timezones)
-    if check_modified:
-        resource_last_mod = resource.get('last_modified')
-        remote_last_mod = headers.get('last-modified')
-        if remote_last_mod and resource_last_mod:
-            resource_last_mod = dateutil.parser.parse(resource_last_mod)
-            remote_last_mod = dateutil.parser.parse(remote_last_mod)
-            if remote_last_mod.date() <= resource_last_mod.date():
-                raise ResourceNotModified(
-                    'Resource {0} not modified'.format(resource['id']))
+    # note: checks by hashes
+    remote_last_mod = headers.get('last-modified')
+    # If the server doesn't return a last-modifed, we shouldn't get stuck
+    # in a loop saving a sha1 of None and comparing that
+    remote_last_mod_hash = None
+    if remote_last_mod is not None:
+        remote_last_mod_hash = hashlib.sha1(remote_last_mod).hexdigest()
+
+    try:
+        resource_hash = json.loads(resource.get('hash'))
+        resource_content_hash = resource_hash['content']
+        resource_header_hash = resource_hash['header']
+        if check_modified and (remote_last_mod_hash is not None and
+                               resource_header_hash == remote_last_mod_hash):
+            raise ResourceNotModified(
+                'Resource {0} not modified'.format(resource['id']))
+    except ValueError:
+        resource_content_hash = resource.get('hash')
+        resource_header_hash = None
+    except:
+        resource_content_hash = None
+        resource_header_hash = None
 
     resource_format = resource['format'].lower()
     ct = _clean_content_type(headers.get('content-type', '').lower())
@@ -186,8 +197,10 @@ def download(context, resource, max_content_length, data_formats,
         raise DownloadError("Content-length after streaming was zero")
 
     # update the resource metadata in CKAN if the resource has changed
-    if resource.get('hash') != hash:
-        resource['hash'] = hash
+    if resource_content_hash != hash or (resource_header_hash is None
+                                         and remote_last_mod_hash is not None):
+        resource['hash'] = json.dumps(
+            {'content': hash, 'header': remote_last_mod_hash})
         try:
             # This may fail for archiver.update() as a result of the resource
             # not yet existing, but is necessary for dependant extensions.
@@ -199,7 +212,7 @@ def download(context, resource, max_content_length, data_formats,
                 ' hash=%s', resource['id'], url, saved_file, length, hash)
 
     return {'length': length,
-            'hash': hash,
+            'hash': resource_content_hash,
             'headers': headers,
             'saved_file': saved_file}
 
