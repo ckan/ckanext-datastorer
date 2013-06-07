@@ -247,7 +247,11 @@ class AddToDataStore(CkanCommand):
         print resource_status
 
     def push_to_datastore(self, context, resource):
-        original_hash = resource.get('hash')
+        try:
+            original_hash = json.loads(resource.get('hash'))
+            original_content_hash = original_hash['content']
+        except ValueError:
+            original_content_hash = resource.get('hash')
         check_hash = not self.options.force
 
         try:
@@ -269,7 +273,7 @@ class AddToDataStore(CkanCommand):
                     'resource': resource['id'],
                     'error': 'Could not download resource'}
 
-        if check_hash and (result['hash'] == original_hash):
+        if check_hash and (result['hash'] == original_content_hash):
             logger.info(
                 'Skipping unmodified resource: {0}'.format(resource['url'])
             )
