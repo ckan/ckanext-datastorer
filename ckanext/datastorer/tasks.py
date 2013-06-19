@@ -51,7 +51,7 @@ def stringify_processor():
     def to_string(row_set, row):
         for cell in row:
             if cell.value is None:
-                cell.value = None
+                continue
             else:
                 cell.value = unicode(cell.value)
         return row
