@@ -50,8 +50,8 @@ def check_response_and_retry(response, datastore_create_request_url, logger):
 def stringify_processor():
     def to_string(row_set, row):
         for cell in row:
-            if not cell.value:
-                cell.value = None
+            if cell.value is None:
+                continue
             else:
                 cell.value = unicode(cell.value)
         return row
