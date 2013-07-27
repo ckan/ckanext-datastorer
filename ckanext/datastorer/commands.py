@@ -5,6 +5,7 @@ import json
 import messytables
 from messytables import (any_tableset, types_processor, headers_guess,
                          headers_processor, type_guess, offset_processor)
+import os
 import requests
 import urlparse
 from pylons import config
@@ -264,11 +265,13 @@ class AddToDataStore(CkanCommand):
             logger.info(
                 'Skipping unmodified resource: {0}'.format(resource['url'])
             )
+            os.remove(result['saved_file'])
             return {'success': True,
                     'resource': resource['id'],
                     'error': None}
         except Exception as e:
             logger.exception(e)
+            os.remove(result['saved_file'])
             return {'success': False,
                     'resource': resource['id'],
                     'error': 'Could not download resource'}
@@ -277,6 +280,7 @@ class AddToDataStore(CkanCommand):
             logger.info(
                 'Skipping unmodified resource: {0}'.format(resource['url'])
             )
+            os.remove(result['saved_file'])
             return {'success': True,
                     'resource': resource['id'],
                     'error': None}
@@ -293,6 +297,7 @@ class AddToDataStore(CkanCommand):
             )
         except Exception as e:
             logger.exception(e)
+            os.remove(result['saved_file'])
             return {'success': False,
                     'resource': resource['id'],
                     'error': 'Error parsing the resource'}
@@ -374,6 +379,7 @@ class AddToDataStore(CkanCommand):
                 send_request(data)
         except Exception as e:
             logger.exception(e)
+            os.remove(result['saved_file'])
             return {'success': False,
                     'resource': resource['id'],
                     'error': 'Error pushing data to datastore'}
@@ -389,6 +395,7 @@ class AddToDataStore(CkanCommand):
         })
 
         toolkit.get_action('resource_update')(context, resource)
+        os.remove(result['saved_file'])
         return {'success': True,
                 'resource': resource['id'],
                 'error': None}
