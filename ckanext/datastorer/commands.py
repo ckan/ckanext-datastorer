@@ -265,13 +265,11 @@ class AddToDataStore(CkanCommand):
             logger.info(
                 'Skipping unmodified resource: {0}'.format(resource['url'])
             )
-            os.remove(result['saved_file'])
             return {'success': True,
                     'resource': resource['id'],
                     'error': None}
         except Exception as e:
             logger.exception(e)
-            os.remove(result['saved_file'])
             return {'success': False,
                     'resource': resource['id'],
                     'error': 'Could not download resource'}
