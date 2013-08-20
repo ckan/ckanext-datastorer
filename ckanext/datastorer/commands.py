@@ -117,12 +117,12 @@ class Datastorer(CkanCommand):
                                         tasks.DATA_FORMATS):
                         logger.warn('Skipping resource %s from package %s '
                                 'because MIME type %s and format %s are '
-                                'unrecognized' % (resource['url'],
+                                'unrecognized' % (resource['url'].encode('utf-8'),
                                 package['name'], mimetype, resource['format']))
                         continue
 
                     logger.info('Datastore resource from resource %s from '
-                                'package %s' % (resource['url'],
+                                'package %s' % (resource['url'].encode('utf-8'),
                                                 package['name']))
 
                     if cmd == "update":
@@ -229,19 +229,19 @@ class AddToDataStore(CkanCommand):
                                     resource['format'].lower()
                                     in DATA_FORMATS):
                     logger.warn('Skipping resource {0} from package {1} '
-                                'because MIME type {2} and format {3} is '
-                                'unrecognized'.format(resource['url'],
-                                                      package['name'],
-                                                      mimetype,
-                                                      resource['format']))
+                        'because MIME type {2} and format {3} is '
+                        'unrecognized'.format(resource['url'].encode('utf-8'),
+                                              package['name'],
+                                              mimetype,
+                                              resource['format']))
                     continue
                 if (self.options.ignore and resource['id'] in
                         self.options.ignore):
                     logger.warn('Ignoring resource {0}'.format(resource['id']))
                     continue
                 logger.info('Datastore resource from resource {0} from '
-                            'package {0}'.format(resource['url'],
-                                                 package['name']))
+                    'package {0}'.format(resource['url'].encode('utf-8'),
+                                         package['name']))
                 status = self.push_to_datastore(context, resource)
                 if status['success'] is False:
                     resource_status.append(status)
@@ -263,7 +263,8 @@ class AddToDataStore(CkanCommand):
                                              check_modified=check_hash)
         except fetch_resource.ResourceNotModified as e:
             logger.info(
-                'Skipping unmodified resource: {0}'.format(resource['url'])
+                'Skipping unmodified resource: {0}'.format(
+                    resource['url'].encode('utf-8'))
             )
             return {'success': True,
                     'resource': resource['id'],
@@ -276,7 +277,8 @@ class AddToDataStore(CkanCommand):
 
         if check_hash and (result['hash'] == original_content_hash):
             logger.info(
-                'Skipping unmodified resource: {0}'.format(resource['url'])
+                'Skipping unmodified resource: {0}'.format(
+                    resource['url'].encode('utf-8'))
             )
             os.remove(result['saved_file'])
             return {'success': True,
