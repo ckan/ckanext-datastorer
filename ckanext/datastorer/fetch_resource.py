@@ -106,6 +106,8 @@ def download(context, resource, max_content_length, data_formats,
     except ValueError:
         resource_content_hash = resource.get('hash')
         resource_header_hash = None
+    except ResourceNotModified:
+        raise ResourceNotModified
     except:
         resource_content_hash = None
         resource_header_hash = None
