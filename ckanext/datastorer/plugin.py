@@ -2,10 +2,9 @@ from ckan import model
 from ckan.model.types import make_uuid
 from ckan.plugins import (SingletonPlugin, implements,
                           IDomainObjectModification,
-                          IResourceUrlChange, IConfigurable)
+                          IResourceUrlChange)
 from ckan.logic import get_action
 from ckan.lib.celery_app import celery
-import ckan.lib.helpers as h
 from ckan.lib.dictization.model_dictize import resource_dictize
 import json
 from datetime import datetime
@@ -37,9 +36,13 @@ class DatastorerPlugin(SingletonPlugin):
         user = get_action('get_site_user')({'model': model,
                                             'ignore_auth': True,
                                             'defer_commit': True}, {})
+        if not hasattr(self, 'site_url'):
+            from pylons import config
+            self.site_url = config.get('ckan.site_url_internally') or \
+                            config.get('ckan.site_url')
 
         context = json.dumps({
-            'site_url': h.url_for_static('/', qualified=True),
+            'site_url': self.site_url,
             'apikey': user.get('apikey'),
             'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),
