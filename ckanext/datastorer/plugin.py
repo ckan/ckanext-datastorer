@@ -1,3 +1,4 @@
+from pylons import config
 from ckan import model
 from ckan.model.types import make_uuid
 from ckan.plugins import (SingletonPlugin, implements,
@@ -33,13 +34,23 @@ class DatastorerPlugin(SingletonPlugin):
             # notify function in IResourceUrlChange only takes 1 parameter
             self._create_datastorer_task(entity)
 
+    def _get_site_url(self):
+        if self.site_url:
+            return self.site_url
+        else:
+            try:
+                self.site_url = h.url_for_static('/', qualified=True) 
+            except AttributeError:
+                self.site_url = config.get('ckan.site_url', '')
+            return self.site_url
+
     def _create_datastorer_task(self, resource):
         user = get_action('get_site_user')({'model': model,
                                             'ignore_auth': True,
                                             'defer_commit': True}, {})
 
         context = json.dumps({
-            'site_url': h.url_for_static('/', qualified=True),
+            'site_url': self._get_site_url(), 
             'apikey': user.get('apikey'),
             'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),
