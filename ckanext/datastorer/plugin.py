@@ -35,14 +35,10 @@ class DatastorerPlugin(SingletonPlugin):
             self._create_datastorer_task(entity)
 
     def _get_site_url(self):
-        if self.site_url:
-            return self.site_url
-        else:
-            try:
-                self.site_url = h.url_for_static('/', qualified=True) 
-            except AttributeError:
-                self.site_url = config.get('ckan.site_url', '')
-            return self.site_url
+        try:
+            return h.url_for_static('/', qualified=True) 
+        except AttributeError:
+            return config.get('ckan.site_url', '')
 
     def _create_datastorer_task(self, resource):
         user = get_action('get_site_user')({'model': model,
