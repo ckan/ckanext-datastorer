@@ -17,7 +17,6 @@ import ckan.plugins.toolkit as toolkit
 from common import DATA_FORMATS, TYPE_MAPPING
 import fetch_resource
 import logging
-logger = logging.getLogger()
 
 
 class DatastorerException(Exception):
@@ -69,6 +68,11 @@ class Datastorer(CkanCommand):
 
         cmd = self.args[0]
         self._load_config()
+
+        # Create our logger object *after* calling _load_config(), so the
+        # logging config doesn't get overridden.
+        self.logger = logging.getLogger(__name__)
+
         #import after load config so CKAN_CONFIG evironment variable can be set
         from ckan.lib.celery_app import celery
         import tasks
@@ -96,10 +100,11 @@ class Datastorer(CkanCommand):
                 if response.status_code == 200:
                     packages = [json.loads(response.content).get('result')]
                 elif response.status_code == 404:
-                    logger.error('Dataset %s not found' % self.args[1])
+                    self.logger.error('Dataset %s not found' % self.args[1])
                     sys.exit(1)
                 else:
-                    logger.error('Error getting dataset %s' % self.args[1])
+                    self.logger.error('Error getting dataset {name}'.format(
+                        name=self.args[1]))
                     sys.exit(1)
             else:
                 packages = self._get_all_packages(api_url, headers)
@@ -115,18 +120,20 @@ class Datastorer(CkanCommand):
                     if mimetype and not(mimetype in tasks.DATA_FORMATS or
                                         resource['format'].lower() in
                                         tasks.DATA_FORMATS):
-                        logger.warn(u'Skipping resource %s from package %s '
-                                u'because MIME type %s and format %s are '
-                                u'unrecognized' % (resource['url'],
-                                package['name'], mimetype, resource['format']))
+                        self.logger.warn(
+                            u'Skipping resource %s from package %s because '
+                            u'MIME type %s and format %s are unrecognized' % (
+                                resource['url'], package['name'], mimetype,
+                                resource['format']))
                         continue
 
-                    logger.info(u'Datastore resource from resource %s from '
-                                u'package %s' % (resource['url'], package['name']))
+                    self.logger.info(u'Datastore resource from resource %s '
+                                     u'from package %s' % (resource['url'],
+                                                           package['name']))
 
                     if cmd == "update":
-                        logger.setLevel(0)
-                        tasks._datastorer_upload(context, resource, logger)
+                        tasks._datastorer_upload(context, resource,
+                                                 self.logger)
                     elif cmd == "queue":
                         task_id = make_uuid()
                         datastorer_task_status = {
@@ -148,7 +155,7 @@ class Datastorer(CkanCommand):
                                      args=[json.dumps(context), data],
                                      task_id=task_id)
         else:
-            logger.error('Command %s not recognized' % (cmd,))
+            self.logger.error('Command %s not recognized' % (cmd,))
 
 
 class AddToDataStore(CkanCommand):
@@ -202,6 +209,11 @@ class AddToDataStore(CkanCommand):
             return
 
         self._load_config()
+
+        # Create our logger object *after* calling _load_config(), so the
+        # logging config doesn't get overridden.
+        self.logger = logging.getLogger(__name__)
+
         user = toolkit.get_action('get_site_user')({'model': model,
                                                     'ignore_auth': True}, {})
         context = {'username': user.get('name'),
@@ -215,7 +227,7 @@ class AddToDataStore(CkanCommand):
                     toolkit.get_action('package_show')(context, data_dict)
                 ]
             except toolkit.ObjectNotFound:
-                logger.error('Dataset %s not found' % self.args[0])
+                self.logger.error('Dataset %s not found' % self.args[0])
                 sys.exit(1)
         else:
             packages = self._get_all_packages()
@@ -227,7 +239,7 @@ class AddToDataStore(CkanCommand):
                 if mimetype and not(mimetype in DATA_FORMATS or
                                     resource['format'].lower()
                                     in DATA_FORMATS):
-                    logger.warn(u'Skipping resource {0} from package {1} '
+                    self.logger.warn(u'Skipping resource {0} from package {1} '
                         u'because MIME type {2} and format {3} is '
                         u'unrecognized'.format(resource['url'],
                                               package['name'],
@@ -236,9 +248,10 @@ class AddToDataStore(CkanCommand):
                     continue
                 if (self.options.ignore and resource['id'] in
                         self.options.ignore):
-                    logger.warn('Ignoring resource {0}'.format(resource['id']))
+                    self.logger.warn('Ignoring resource {0}'.format(
+                        resource['id']))
                     continue
-                logger.info(u'Datastore resource from resource {0} from '
+                self.logger.info(u'Datastore resource from resource {0} from '
                     u'package {0}'.format(resource['url'],
                                          package['name']))
                 status = self.push_to_datastore(context, resource)
@@ -261,20 +274,20 @@ class AddToDataStore(CkanCommand):
                                              DATA_FORMATS,
                                              check_modified=check_hash)
         except fetch_resource.ResourceNotModified as e:
-            logger.info(
+            self.logger.info(
                 u'Skipping unmodified resource: {0}'.format(resource['url'])
             )
             return {'success': True,
                     'resource': resource['id'],
                     'error': None}
         except Exception as e:
-            logger.exception(e)
+            self.logger.exception(e)
             return {'success': False,
                     'resource': resource['id'],
                     'error': 'Could not download resource'}
 
         if check_hash and (result['hash'] == original_content_hash):
-            logger.info(
+            self.logger.info(
                 u'Skipping unmodified resource: {0}'.format(resource['url'])
             )
             os.remove(result['saved_file'])
@@ -293,7 +306,7 @@ class AddToDataStore(CkanCommand):
                 extension=resource['format'].lower()
             )
         except Exception as e:
-            logger.exception(e)
+            self.logger.exception(e)
             os.remove(result['saved_file'])
             return {'success': False,
                     'resource': resource['id'],
@@ -306,7 +319,7 @@ class AddToDataStore(CkanCommand):
         row_set.register_processor(offset_processor(offset + 1))
         row_set.register_processor(datetime_procesor())
 
-        logger.info('Header offset: {0}.'.format(offset))
+        self.logger.info('Header offset: {0}.'.format(offset))
 
         guessed_types = type_guess(
             row_set.sample,
@@ -319,7 +332,7 @@ class AddToDataStore(CkanCommand):
             ],
             strict=True
         )
-        logger.info('Guessed types: {0}'.format(guessed_types))
+        self.logger.info('Guessed types: {0}'.format(guessed_types))
         row_set.register_processor(types_processor(guessed_types, strict=True))
         row_set.register_processor(stringify_processor())
 
@@ -342,20 +355,20 @@ class AddToDataStore(CkanCommand):
         # Delete any existing data before proceeding. Otherwise
         # 'datastore_create' will append to the existing datastore. And if the
         # fields have significantly changed, it may also fail.
-        logger.info('Trying to delete existing datastore for resource {0} '
-                    '(may not exist).'.format(resource['id']))
+        self.logger.info('Trying to delete existing datastore for resource {0}'
+            ' (may not exist).'.format(resource['id']))
         try:
             toolkit.get_action('datastore_delete')(
                 context,
                 {'resource_id': resource['id']}
             )
         except toolkit.ObjectNotFound:
-            logger.info('Datastore not found for resource {0}.'.format(
+            self.logger.info('Datastore not found for resource {0}.'.format(
                 resource['id']))
         except Exception as e:
-            logger.exception(e)
+            self.logger.exception(e)
 
-        logger.info('Creating: {0}.'.format(resource['id']))
+        self.logger.info('Creating: {0}.'.format(resource['id']))
 
         # generates chunks of data that can be loaded into ckan
         # n is the maximum size of a chunk
@@ -375,13 +388,13 @@ class AddToDataStore(CkanCommand):
                 count += len(data)
                 send_request(data)
         except Exception as e:
-            logger.exception(e)
+            self.logger.exception(e)
             os.remove(result['saved_file'])
             return {'success': False,
                     'resource': resource['id'],
                     'error': 'Error pushing data to datastore'}
 
-        logger.info("There should be {n} entries in {res_id}.".format(
+        self.logger.info("There should be {n} entries in {res_id}.".format(
             n=count,
             res_id=resource['id']
         ))
