@@ -250,9 +250,10 @@ class AddToDataStore(CkanCommand):
         try:
             original_hash = json.loads(resource.get('hash'))
             original_content_hash = original_hash['content']
+            check_hash = not self.options.force
         except ValueError:
             original_content_hash = resource.get('hash')
-        check_hash = not self.options.force
+            check_hash = False
 
         try:
             result = fetch_resource.download(context,
