@@ -293,23 +293,15 @@ class AddToDataStore(CkanCommand):
                 mimetype=content_type,
                 extension=resource['format'].lower()
             )
+            # only first sheet in xls for time being
+            row_set = table_sets.tables[0]
+            offset, headers = headers_guess(row_set.sample)
         except Exception as e:
             logger.exception(e)
             os.remove(result['saved_file'])
             return {'success': False,
                     'resource': resource['id'],
                     'error': 'Error parsing the resource'}
-
-        # only first sheet in xls for time being
-        row_set = table_sets.tables[0]
-        try:
-            offset, headers = headers_guess(row_set.sample)
-        except messytables.error.ReadError as e:
-            logger.exception(e)
-            return {'success': False,
-                    'resource': resource['id'],
-                    'error': 'Error parsing the resource'
-            }
 
         row_set.register_processor(headers_processor(headers))
         row_set.register_processor(offset_processor(offset + 1))
