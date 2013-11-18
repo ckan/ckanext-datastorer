@@ -202,6 +202,7 @@ class AddToDataStore(CkanCommand):
             return
 
         self._load_config()
+        config['ckan.activity_streams_enabled'] = False
         user = toolkit.get_action('get_site_user')({'model': model,
                                                     'ignore_auth': True}, {})
         context = {'username': user.get('name'),
