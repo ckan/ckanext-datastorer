@@ -133,6 +133,7 @@ def _datastorer_upload(context, resource, logger):
     def send_request(data):
         request = {'resource_id': resource['id'],
                    'fields': [dict(id=name, type=typename) for name, typename in zip(headers, guessed_type_names)],
+                   'force': True,
                    'records': data}
         response = requests.post(datastore_create_request_url,
                          data=json.dumps(request),
@@ -147,7 +148,7 @@ def _datastorer_upload(context, resource, logger):
     try:
         logger.info('Deleting existing datastore (it may not exist): {0}.'.format(resource['id']))
         response = requests.post('%s/api/action/datastore_delete' % (ckan_url),
-                        data=json.dumps({'resource_id': resource['id']}),
+                                 data=json.dumps({'resource_id': resource['id'], 'force': True}),
                         headers={'Content-Type': 'application/json',
                                 'Authorization': context['apikey']}
                         )
