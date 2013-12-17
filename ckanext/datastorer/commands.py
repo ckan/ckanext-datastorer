@@ -333,7 +333,8 @@ class AddToDataStore(CkanCommand):
                 'resource_id': resource['id'],
                 'fields': [dict(id=name, type=typename) for name, typename
                            in zip(headers, guessed_type_names)],
-                'records': data
+                'records': data,
+                'force': True,
             }
             response = toolkit.get_action('datastore_create')(
                 context,
@@ -349,7 +350,7 @@ class AddToDataStore(CkanCommand):
         try:
             toolkit.get_action('datastore_delete')(
                 context,
-                {'resource_id': resource['id']}
+                {'resource_id': resource['id'], 'force': True}
             )
         except toolkit.ObjectNotFound:
             logger.info('Datastore not found for resource {0}.'.format(
