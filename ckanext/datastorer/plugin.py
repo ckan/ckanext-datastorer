@@ -11,7 +11,9 @@ from ckan.lib.dictization.model_dictize import resource_dictize
 import json
 from datetime import datetime
 from logging import getLogger
-logger = getLogger(__name__)
+
+
+logger = getLogger('ckanext_datastorer')
 
 
 class DatastorerPlugin(SingletonPlugin):
@@ -36,7 +38,7 @@ class DatastorerPlugin(SingletonPlugin):
 
     def _get_site_url(self):
         try:
-            return h.url_for_static('/', qualified=True) 
+            return h.url_for_static('/', qualified=True)
         except AttributeError:
             return config.get('ckan.site_url', '')
 
@@ -46,7 +48,7 @@ class DatastorerPlugin(SingletonPlugin):
                                             'defer_commit': True}, {})
 
         context = json.dumps({
-            'site_url': self._get_site_url(), 
+            'site_url': self._get_site_url(),
             'apikey': user.get('apikey'),
             'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),

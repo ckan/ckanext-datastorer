@@ -17,7 +17,9 @@ import ckan.plugins.toolkit as toolkit
 from common import DATA_FORMATS, TYPE_MAPPING
 import fetch_resource
 import logging
-logger = logging.getLogger()
+
+
+logger = logging.getLogger('ckanext_datastorer')
 
 
 class DatastorerException(Exception):
@@ -115,7 +117,7 @@ class Datastorer(CkanCommand):
                     if mimetype and not(mimetype in tasks.DATA_FORMATS or
                                         resource['format'].lower() in
                                         tasks.DATA_FORMATS):
-                        logger.warn(u'Skipping resource %s from package %s '
+                        logger.info(u'Skipping resource %s from package %s '
                                 u'because MIME type %s and format %s are '
                                 u'unrecognized' % (resource['url'],
                                 package['name'], mimetype, resource['format']))
@@ -228,7 +230,7 @@ class AddToDataStore(CkanCommand):
                 if mimetype and not(mimetype in DATA_FORMATS or
                                     resource['format'].lower()
                                     in DATA_FORMATS):
-                    logger.warn(u'Skipping resource {0} from package {1} '
+                    logger.info(u'Skipping resource {0} from package {1} '
                         u'because MIME type {2} and format {3} is '
                         u'unrecognized'.format(resource['url'],
                                               package['name'],
@@ -237,7 +239,7 @@ class AddToDataStore(CkanCommand):
                     continue
                 if (self.options.ignore and resource['id'] in
                         self.options.ignore):
-                    logger.warn('Ignoring resource {0}'.format(resource['id']))
+                    logger.info('Ignoring resource {0}'.format(resource['id']))
                     continue
                 logger.info(u'Datastore resource from resource {0} from '
                     u'package {0}'.format(resource['url'],

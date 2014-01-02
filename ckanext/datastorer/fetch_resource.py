@@ -2,13 +2,17 @@ from datetime import datetime
 import hashlib
 import httplib
 import json
-import logging as log
+import logging
 import os
 import requests
 import tempfile
 import urllib
 import urlparse
 import ckan.logic as logic
+
+
+log = logging.getLogger('ckanext_datastorer')
+
 
 
 HTTP_ERROR_CODES = {
@@ -210,7 +214,7 @@ def download(context, resource, max_content_length, data_formats,
         except:
             pass
 
-    log.warning('Resource downloaded: id=%s url=%r cache_filename=%s length=%s'
+    log.info('Resource downloaded: id=%s url=%r cache_filename=%s length=%s'
                 ' hash=%s', resource['id'], url, saved_file, length, hash)
 
     return {'length': length,
