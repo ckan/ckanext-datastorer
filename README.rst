@@ -70,6 +70,23 @@ To queue the update to run in celery, use:
 
 	paster datastorer queue [package-id]
 
+Logging and Debugging
+---------------------
+
+Edit the CKAN config file and add a logger for ckanext_datastorer to see the
+deubgging information.
+
+    [logger_ckanext_datastorer]
+    level = DEBUG
+    handlers = console
+    qualname = ckanext_datastorer
+    propagate = 0
+
+Remember to add ckanext_datastorer to the keys under loggers.
+
+    [loggers]
+    keys = root, ckan, ckanext, ckanext_datastorer
+
 Developers
 ----------
 
