@@ -250,12 +250,16 @@ class AddToDataStore(CkanCommand):
         print resource_status
 
     def push_to_datastore(self, context, resource):
-        try:
-            original_hash = json.loads(resource.get('hash'))
-            original_content_hash = original_hash['content']
+
+        # Get the resource's content hash, which is used to check whether the
+        # resource file has changed since last time.
+        hash_dict = resource.get('hash')
+        if hash_dict:
+            original_content_hash = json.loads(hash_dict)['content']
             check_hash = not self.options.force
-        except ValueError:
-            original_content_hash = resource.get('hash')
+        else:
+            # This resource has no hash yet, it must be a new resource.
+            original_content_hash = ''
             check_hash = False
 
         try:
