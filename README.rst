@@ -74,7 +74,7 @@ Logging and Debugging
 ---------------------
 
 Edit the CKAN config file and add a logger for ckanext_datastorer to see the
-deubgging information.
+deubgging information::
 
     [logger_ckanext_datastorer]
     level = DEBUG
@@ -82,7 +82,7 @@ deubgging information.
     qualname = ckanext_datastorer
     propagate = 0
 
-Remember to add ckanext_datastorer to the keys under loggers.
+Remember to add ckanext_datastorer to the keys under loggers::
 
     [loggers]
     keys = root, ckan, ckanext, ckanext_datastorer
