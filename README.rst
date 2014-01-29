@@ -9,7 +9,7 @@ Installation without celery
 
 After activating your pyenv, install the sources via pip::
 
-    $ (pyenv) pip install -e git+git://github.com/okfn/ckanext-datastorer.git#egg=ckanext-datastorer
+    $ (pyenv) pip install -e git+git://github.com/ckan/ckanext-datastorer.git#egg=ckanext-datastorer
 
 Install the requirements::
 
@@ -36,7 +36,7 @@ Installation with celery
 
 After activating your pyenv, install the sources via pip::
 
-    $ (pyenv) pip install -e git+git://github.com/okfn/ckanext-datastorer.git#egg=ckanext-datastorer
+    $ (pyenv) pip install -e git+git://github.com/ckan/ckanext-datastorer.git#egg=ckanext-datastorer
 
 Install the requirements::
 
