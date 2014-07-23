@@ -32,12 +32,12 @@ class Datastorer(CkanCommand):
 
     Usage:
 
-    paster datastorer [update|queue] [package-id]
+    paster datastorer [update|queue|push] [package-id]
            - Update all resources or just those belonging to a specific
              package if a package id is provided. Use 'update' to update
              the resource synchronously and log to stdout, or 'queue'
              to queue the update to run asynchronously in celery
-             (output goes to celery's logs).
+             (output goes to celery's logs). Use 'push' to use the datapusher.
 
     """
     summary = __doc__.split('\n')[0]
@@ -87,7 +87,7 @@ class Datastorer(CkanCommand):
             raise Exception('You have to set the "ckan.site_url" property in your ini file.')
         api_url = urlparse.urljoin(config['ckan.site_url'], 'api/action')
 
-        if cmd in ('update', 'queue'):
+        if cmd in ('update', 'queue', 'push'):
             headers = {
                 'content-type:': 'application/json'
             }
@@ -126,6 +126,11 @@ class Datastorer(CkanCommand):
                     logger.info(u'Datastore resource from resource %s from '
                                 u'package %s' % (resource['url'], package['name']))
 
+                    datastorer_task_context = {
+                        'model': model,
+                        'user': user.get('name')
+                    }
+
                     if cmd == "update":
                         logger.setLevel(0)
                         tasks._datastorer_upload(context, resource, logger)
@@ -139,16 +144,45 @@ class Datastorer(CkanCommand):
                             'value': task_id,
                             'last_updated': datetime.now().isoformat()
                         }
-                        datastorer_task_context = {
-                            'model': model,
-                            'user': user.get('name')
-                        }
 
                         get_action('task_status_update')(datastorer_task_context,
                                                          datastorer_task_status)
                         celery.send_task("datastorer.upload",
-                                     args=[json.dumps(context), data],
-                                     task_id=task_id)
+                                         args=[json.dumps(context), data],
+                                         task_id=task_id)
+                    elif cmd == "push":
+                        data_dict = {
+                            'api_key': context['apikey'],
+                            'job_type': 'push_to_datastore',
+                            #'result_url': 'https://www.ckan.org/datapusher/callback',
+                            'metadata': {
+                                'ckan_url': context['site_url'],
+                                'resource_id': resource['id']
+                            }
+                        }
+                        url = urlparse.urljoin(config['datapusher.url'], '/job')
+                        r = requests.post(url,
+                                          data=json.dumps(data_dict),
+                                          headers=headers)
+                        if r.status_code not in (200, 201):
+                            raise Exception('Error when pushing to the datapusher. Message: %s' % r.content)
+                        response = r.json()
+                        job_data = {
+                            'job_id': response['job_id'],
+                            'job_key': response['job_key']
+                        }
+                        logger.warn('Submitted job. Got id %s.' % response['job_id'])
+                        datastorer_task_status = {
+                            'entity_id': resource['id'],
+                            'entity_type': u'resource',
+                            'task_type': u'datapusher',
+                            'key': u'datapusher_job_data',
+                            'value': json.dumps(job_data),
+                            'last_updated': datetime.now().isoformat(),
+                            'state': 'pending'
+                        }
+                        get_action('task_status_update')(datastorer_task_context,
+                                                         datastorer_task_status)
         else:
             logger.error('Command %s not recognized' % (cmd,))
 
