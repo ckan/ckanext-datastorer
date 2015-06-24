@@ -24,6 +24,7 @@ class DatastorerPlugin(SingletonPlugin):
     """
     implements(IDomainObjectModification, inherit=True)
     implements(IResourceUrlChange)
+    implements(IConfigurable, inherit=True)
 
     def notify(self, entity, operation=None):
         if not isinstance(entity, model.Resource):
@@ -36,6 +37,15 @@ class DatastorerPlugin(SingletonPlugin):
             # notify function in IResourceUrlChange only takes 1 parameter
             self._create_datastorer_task(entity)
 
+    def configure(self, config):
+        
+        try:
+            sample_size = int(config.get('ckanext.datastorer.sample_size'))
+        except:
+            self.sample_size = None
+        else:
+            self.sample_size = sample_size 
+
     def _get_site_url(self):
         try:
             return h.url_for_static('/', qualified=True)
@@ -47,13 +57,17 @@ class DatastorerPlugin(SingletonPlugin):
                                             'ignore_auth': True,
                                             'defer_commit': True}, {})
 
-        context = json.dumps({
+        context = {
             'site_url': self._get_site_url(),
             'apikey': user.get('apikey'),
             'site_user_apikey': user.get('apikey'),
             'username': user.get('name'),
-        })
-        data = json.dumps(resource_dictize(resource, {'model': model}))
+        }
+        
+        if self.sample_size:
+            context['sample_size'] = self.sample_size
+        
+        data = resource_dictize(resource, {'model': model})
 
         task_id = make_uuid()
         datastorer_task_status = {
@@ -71,5 +85,5 @@ class DatastorerPlugin(SingletonPlugin):
         get_action('task_status_update')(archiver_task_context,
                                          datastorer_task_status)
         celery.send_task("datastorer.upload",
-                         args=[context, data],
+                         args=[json.dumps(context), json.dumps(data)],
                          task_id=task_id)

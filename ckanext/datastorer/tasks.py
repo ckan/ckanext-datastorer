@@ -99,6 +99,10 @@ def _datastorer_upload(context, resource, logger):
 
     f = open(result['saved_file'], 'rb')
     table_sets = any_tableset(f, mimetype=content_type, extension=resource['format'].lower())
+    
+    if 'sample_size' in context:
+        table_sets.window = max(1000, int(context['sample_size']))
+        logger.info('Using a sample window of %d', table_sets.window)
 
     ##only first sheet in xls for time being
     row_set = table_sets.tables[0]
