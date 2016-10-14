@@ -1,0 +1,14 @@
+Source: ckanext-datastorer
+Maintainer: CKAN team. <ckan-dev@okfn.org>
+Section: python
+Priority: optional
+Build-Depends: python-setuptools (>= 0.6b3), debhelper (>= 7), python-support (>= 0.8.4)
+Standards-Version: 3.7.2
+
+Package: python-ckanext-datastorer
+Architecture: all
+Depends: ${python:Depends}
+XB-Python-Version: ${python:Versions}
+Provides: ${python:Provides}
+Description: Tasks that upload data to the webstore.
+ .
