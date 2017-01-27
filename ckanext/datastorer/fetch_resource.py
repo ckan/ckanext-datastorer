@@ -299,6 +299,11 @@ def link_checker(context, data):
                     error_message = ("URL unobtainable: Server returned "
                                      "HTTP %s" % res.status_code)
                 raise LinkHeadRequestError(error_message)
+
+    # Turn headers into a dict (not a CaseInsensitiveDict) so that it can be
+    # JSON seralized.
+    headers = dict(headers)
+
     return json.dumps(headers)
 
 
